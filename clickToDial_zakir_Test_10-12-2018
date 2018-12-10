@@ -1,0 +1,1754 @@
+<apex:page controller="TwilioClientController_clone_Zakir" showHeader="false"  standardStylesheets="false"  id="pageid" >  
+
+     <script type="text/javascript" src="//static.twilio.com/libs/twiliojs/1.3/twilio.min.js"></script>
+     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+     <script src="https://na15.salesforce.com/support/api/33.0/interaction.js"></script>
+     
+     <!--###########################ADD BY SUMAN ####################################################-->
+     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>
+     <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"  />
+     <!-- jQuery library -->
+     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+     <!-- Latest compiled JavaScript -->
+     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    
+   <body>    
+       <script>
+   
+        $( document ).ready(function() {
+            console.log( "ready!" );
+             $("#button1").click(function(){
+             console.log('1 sent');
+               connection.sendDigits('1');               
+            });
+             $("#button2").click(function(){
+             console.log('2 sent');
+               connection.sendDigits('2');               
+            });
+             $("#button3").click(function(){
+             console.log('3 sent');
+               connection.sendDigits('3');               
+            });
+             $("#button4").click(function(){
+             console.log('4 sent');
+               connection.sendDigits('4');               
+            });
+             $("#button5").click(function(){
+             console.log('5 sent');
+               connection.sendDigits('5');               
+            });
+             $("#button6").click(function(){
+             console.log('6 sent');
+               connection.sendDigits('6');               
+            });
+             $("#button7").click(function(){
+             console.log('7 sent');
+               connection.sendDigits('7');               
+            });
+             $("#button8").click(function(){
+             console.log('8 sent');
+               connection.sendDigits('8');               
+            });
+             $("#button9").click(function(){
+             console.log('9 sent');
+               connection.sendDigits('9');               
+            });
+             $("#buttonstar").click(function(){
+             console.log('* sent');
+               connection.sendDigits('*');               
+            });
+             $("#buttonhash").click(function(){
+             console.log('# sent');
+               connection.sendDigits('#');               
+            });
+             $("#buttonzero").click(function(){
+             console.log('0 sent');
+               connection.sendDigits('0');               
+            });
+            
+        });
+    </script>
+ 
+          
+     
+    <script type="text/javascript">
+        var oid = '';
+        var phNum = '';
+        var nam = '';
+        var callStat = '' ;
+        var hang = '';
+        var noteSave = '' ;
+        var enterNote = '' ;
+        var connection = '';
+          
+     
+        Twilio.Device.setup("{! token }");
+
+        //OpenCTI!!
+        sforce.interaction.cti.enableClickToDial();
+        sforce.interaction.cti.onClickToDial(startCall);
+
+            function call() {
+                var pc =  $('[id$=conTyp]'); 
+                var calerid = pc.val();
+                console.log('pppppppppppppppppppp--------------------- '+ pc.val());          
+                params = {"PhoneNumber": $("#number").val(), "calerid":calerid};
+                Twilio.Device.connect(params);
+                document.getElementById('callstatusId').value = 'Calling...';
+                document.getElementById("callstatusId").style.background = '#ADFF2F';
+            }
+        
+            function hangup() {
+          
+                Twilio.Device.disconnectAll();
+                hang = 'Call Ended...';
+                document.getElementById('phNumId').value = '';
+                document.getElementById('namId').value = '';
+                document.getElementById('callstatusId').value = hang;
+                document.getElementById("callstatusId").style.background = '#FF6347';
+                document.getElementById("hangUpid").style.background = '#d9524e';
+                  
+                $("#phNumId").hide();
+                $("#namId").hide();
+                $("#callstatusId").show();
+                $("#unmute").hide();
+                $("#mute").hide();
+                $("#saveid").hide();
+                $("#currentcallid").hide();
+   
+          }
+          
+        <!-------------mute unmute ----------->     
+            function mute(){
+        <!--    alert('--MUTE--');  -->
+            connection.mute(true);
+            $("#unmute").show();
+                $("#mute").hide();
+             }
+             
+            function unmute(){
+                connection.mute(false); 
+            <!--    alert('--UNMUTE--');  -->
+                $("#unmute").hide();
+                $("#mute").show(); 
+                    
+            }
+          
+                // Handle incoming calls from Twilio
+                Twilio.Device.incoming(function (conn) {
+                    if (confirm('Accept incoming call from ' + conn.parameters.From + '?')){
+                        conn.accept();
+                        }
+                 });      
+
+            function startCall(response) {
+            
+                 //     var connection = Twilio.Device.connect(params);        <!--  mute and unmute -->
+                <!--  alert('click dial');  -->
+                sforce.interaction.setVisible(true);  //pop up CTI console
+                var result = JSON.parse(response.result);
+                console.log('Result --->'+result);
+                 
+                nam = result.objectName;
+                phNum = result.number;
+                callStat = 'Calling...' ;
+                $("#phNumId").show();
+                $("#namId").show();
+                $("#callstatusId").show();
+        
+                document.getElementById('phNumId').value = phNum;
+                document.getElementById('namId').value = nam;
+                document.getElementById('callstatusId').value = callStat;
+                document.getElementById("callstatusId").style.background = '#ADFF2F';
+                document.getElementById("hangUpid").style.background = '#FF6347';
+
+                $("#unmute").hide(); 
+                $("#mute").show();
+                $("#currentcallid").show();
+                $("#hangUpid").focus();
+                $("#minuteid").show();
+                $("#minuteid").show(); 
+                
+                console.log('result nam-->'+nam+'Result phNum--->'+phNum); 
+                var oid1 = result.objectId;
+                oid = oid1;
+                console.log('result oid---->'+oid);
+                var cleanednumber = cleanFormatting(result.number);             
+                params = {"PhoneNumber": cleanednumber,"RecordId":result.objectId};
+             <!--   Twilio.Device.connect(params);   -->  
+                 connection = Twilio.Device.connect(params);   
+                 
+                $( "#hangup" ).click(function() {
+                         Twilio.Device.disconnectAll();
+                    });
+                    
+                document.getElementById('{!$Component.pageid.noteformid.callnoteId}').value = '';
+                getCurrentCalling();
+                var  a = actFun(oid);          <!------ Action Function ----------->
+                alert(a);  
+            }
+
+            function cleanFormatting(number) { 
+                //changes a SFDC formatted US number, which would be 415-555-1212  into a twilio understanble number 4155551212      
+                return number.replace(' ','').replace('-','').replace('(','').replace(')','').replace('+','');
+            }    
+            
+            
+            
+            <!----------------------------  added by zakir    start ---------------------------------------->
+            
+                          <!----------Remoting start -------->
+           
+            function  getCurrentCalling(){
+                 <!-- alert ('Current Calling ');   -->
+                }
+                   
+           
+           
+           
+            function getRemoteSaveNote(event)
+                    {  event.preventDefault() ;
+                        console.log('Savenote remotng oid--->'+oid);
+                        var noteSave = 'NOTE SAVED' ;
+                        var enterNote = 'PLEASE ENTER NOTE';
+                        var notevalue = document.getElementById('{!$Component.pageid.noteformid.callnoteId}').value ;
+                        
+                        Visualforce.remoting.Manager.invokeAction(
+                                '{!$RemoteAction.TwilioClientController_clone_Zakir.getSaveNote}',oid,notevalue, 
+                                function(result, event){
+                                }, 
+                                {escape: true}
+                            );  
+                            
+                        var od = document.getElementById('{!$Component.pageid.noteformid.callnoteId}').value ;
+
+                        if(oid != null && oid != '' &&  od != '' )
+                            {               
+                                  document.getElementById('saveid').value = noteSave;
+                                  document.getElementById("saveid").style.background = '#FFE4B5';
+                                  $("#saveid").show();
+                              
+                            }
+                        else {
+                              document.getElementById('saveid').value = enterNote;
+                              document.getElementById("saveid").style.background = '#FFE4E1';
+                              $("#saveid").show();
+                            }
+                   
+                }   
+                
+        
+                       <!-----Remoting ENd -------->
+    
+        
+        function hideOrShow(domid){
+                    $("#"+domid).toggle();
+                }
+          
+        function updateleadstatus(){
+                 var oid5 = oid ;
+                console.log('oid5--->'+oid5);
+                <!--   alert('Call Back calander ');  -->
+          //      popupWindow = window.open('https://c.cs72.visual.force.com/00U/e?who_id='+oid5  , 'New window','width=780px,height=700px'); 
+                 popupWindow = window.open('/'+oid5 , 'New window','width=780px,height=700px'); 
+                // alert('oid5oid5---------- '+oid5);
+                   
+                 popupWindow.focus();
+                popupWindow.moveTo(570,50);              
+                }
+                 
+        function invite(){
+                    var oid4 = oid ;
+                   <!-- alert('Invite ');  -->
+                 <!--    popupWindow = window.open('http://mail.google.com/mail/?view=cm&fs=1' , 'New window','width=780px,height=700px'); -->
+                     popupWindow = window.open('https://ap4.salesforce.com/_ui/core/email/author/EmailAuthor?p2_lkid='+oid4 , 'New window','width=780px,height=700px');
+                     popupWindow.focus();        
+                     popupWindow.moveTo(570,50); 
+                }    
+        function Task(){
+                      
+                    var oid3 = oid ;
+                    console.log('oid3--->'+oid3);
+                       // alert('Call Back calander '); 
+                    var url =  'https://ap4.salesforce.com/00T/e?who_id='+oid3  ;
+                      popupWindow = window.open( url , 'New window','width=780px,height=700px' );  
+                    
+             <!--       popupWindow = window.open('https://c.cs72.visual.force.com/00T/e?who_id='+oid3 , 'New window','width=780px,height=700px' );   -->
+
+                     popupWindow.focus();
+                    popupWindow.moveTo(570,50);
+                }
+                
+                <!--  Remoting 15 min --->
+        function Task15(){
+                   // alert('----remoting 15 min ');
+                    console.log('Task15 remotng oid---'+oid);
+                    
+                     Visualforce.remoting.Manager.invokeAction(
+                                '{!$RemoteAction.TwilioClientController_clone_Zakir.getTaskFirst}',oid, 
+                                function(result, event){
+                                 
+                                   if (event.status) {
+                                  //alert('remoteTaskfirstId==>'+result[0].Id);  
+                                  document.getElementById('TaskIdfirst').value = result[0].Id;
+                                  test();
+                                  }                               
+                                }, 
+                                {escape: true}
+                            );  
+               }  
+          
+                      function test()
+                            {
+                            var task15 = document.getElementById('TaskIdfirst').value
+                          //  alert('test');
+                          //  alert('test -- task15'+task15);
+                          var url =  'https://ap4.salesforce.com/00T/e?who_id='+task15  ;  
+                               //     var url =  'https://cs72.salesforce.com/'+task15  ;
+                                      popupWindow = window.open( url , 'New window','width=780px,height=700px' );  
+                             <!--       popupWindow = window.open('https://c.cs72.visual.force.com/00T/e?who_id='+oid3 , 'New window','width=780px,height=700px' );   -->
+                                     popupWindow.focus();
+                                    popupWindow.moveTo(570,50);
+                            }     
+               
+        function  Task30(){
+                //alert('----remoting 30 min ');
+                    console.log('Task30 remotng oid---'+oid);
+                    
+                     Visualforce.remoting.Manager.invokeAction(
+                                '{!$RemoteAction.TwilioClientController_clone_Zakir.getTaskSecond}',oid, 
+                                function(result, event){
+                                 
+                                   if (event.status) {
+                                 // alert('remoteTaskSecondId==>'+result[0].Id);  
+                                  document.getElementById('TaskIdfirst').value = result[0].Id;
+                                  //alert('before test2');
+                                 testSecond();
+                                  }                               
+                                }, 
+                                {escape: true}
+                            );  
+                    }
+                    
+         function testSecond(){
+        // alert('zakir');
+         var task30 = document.getElementById('TaskIdfirst').value
+                          //  alert('test');
+                           // alert('test -- task30'+task30);
+                        <!--    var url =  'https://c.cs72.visual.force.com/00T/e?who_id='+task30  ;  -->
+                                    var url =  'https://ap4.salesforce.com/'+task30  ;
+                                      popupWindow = window.open( url , 'New window','width=780px,height=700px' );  
+                             <!--       popupWindow = window.open('https://c.cs72.visual.force.com/00T/e?who_id='+oid3 , 'New window','width=780px,height=700px' );   -->
+                                     popupWindow.focus();
+                                    popupWindow.moveTo(570,50);
+        }
+                    
+       function  TaskHalf()
+                {
+                   // alert('----remoting One Hours  ');
+                    console.log('One Hours remotng oid---'+oid);
+                    
+                     Visualforce.remoting.Manager.invokeAction(
+                                '{!$RemoteAction.TwilioClientController_clone_Zakir.getTaskThird}',oid, 
+                                function(result, event){
+                                 
+                                   if (event.status) {
+                                  //alert('remoteTaskSecondId==>'+result[0].Id);  
+                                  document.getElementById('TaskIdfirst').value = result[0].Id;
+                                 // alert('before test2');
+                                 testthird();
+                                  }                               
+                                }, 
+                                {escape: true}
+                            );      
+                }
+        
+        function testthird()
+        {
+           // alert('zakir 3 ');
+            var taskhalf = document.getElementById('TaskIdfirst').value
+                            //alert('test');
+                            //alert('test -- taskhalf'+taskhalf);
+                       
+                                    var url =  'https://ap4.salesforce.com/'+taskhalf  ;
+                                      popupWindow = window.open( url , 'New window','width=780px,height=700px' );  
+                             <!--       popupWindow = window.open('https://c.cs72.visual.force.com/00T/e?who_id='+oid3 , 'New window','width=780px,height=700px' );   -->
+                                     popupWindow.focus();
+                                    popupWindow.moveTo(570,50);
+        }
+                
+                
+                
+                <!--  one day --->
+                
+                
+                function  TaskDay()
+                {
+               //     alert('----remoting one day   ');
+                    console.log('one day remotng oid---'+oid);
+                    
+                     Visualforce.remoting.Manager.invokeAction(
+                                '{!$RemoteAction.TwilioClientController_clone_Zakir.getTaskday}',oid, 
+                                function(result, event){
+                                 
+                                   if (event.status) {
+                                  //alert('remoteTaskSecondId==>'+result[0].Id);  
+                                  document.getElementById('TaskIdfirst').value = result[0].Id;
+                                  //alert('before test2');
+                                 testday();
+                                  }                               
+                                }, 
+                                {escape: true}
+                            );      
+                }
+        
+        function testday()
+        {
+           // alert('zakir 4 day  ');
+            var taskDy = document.getElementById('TaskIdfirst').value
+                           // alert('test');
+                           // alert('test -- taskDy'+taskDy);
+                        <!--    var url =  'https://c.cs72.visual.force.com/00T/e?who_id='+taskhalf  ;  -->
+                                    var url =  'https://ap4.salesforce.com/'+taskDy  ;
+                                      popupWindow = window.open( url , 'New window','width=780px,height=700px' );  
+                             <!--       popupWindow = window.open('https://c.cs72.visual.force.com/00T/e?who_id='+oid3 , 'New window','width=780px,height=700px' );   -->
+                                     popupWindow.focus();
+                                    popupWindow.moveTo(570,50);
+        }
+            
+                
+        function addevent(){
+                    var oid2 = oid;
+                    console.log('oid2------------- '+oid2);
+                    <!-- alert('Add Event'); -->
+                    popupWindow = window.open('https://ap4.salesforce.com/00U/e?who_id='+oid2 , 'New window','width=780px,height=700px');
+                    popupWindow.focus();
+                    popupWindow.moveTo(570,50);
+                } 
+        function popUp( url ){
+                    popupWindow = window.open( url, 'New window','width=780px,height=700px' );
+                    popupWindow.focus();
+                    popupWindow.moveTo(570,50);
+                }
+                
+         </script>
+
+        <td bgcolor="white" style="width:17%;height:465px;border:1px solid grey;overflow:scroll; position: fixed;  margin-left: 24%;">
+            <div style="width:100%;">
+            <apex:outputpanel id="fidupdate">
+                <apex:pagemessages />
+                <script>
+                        $(document).ready(function() {
+                        $("#cs").hide();
+                        $("#vm").hide();
+                        $("#dp").hide();    
+                        $("#sm").hide();
+                        $("#sad").hide();
+                        $("#sc").hide();
+                        $("#con").hide();
+                        $("#myem").hide();
+                        $("#ncsoem").hide();
+                        $("#clrid").hide();
+                        $("#unmute").hide();
+                        $("#mute").hide();
+                        $("#namId").hide();
+                        $("#phNumId").hide();
+                        $("#callstatusId").hide();
+                         $("#saveid").hide();
+                        $("#currentcallid").hide();             
+                         $("#minuteid").hide();  
+                        
+                        document.getElementById('mute-sound').style.display = 'inline-block';
+
+                        
+                        
+                    });
+                </script>
+            </apex:outputpanel>
+           </div>
+           </td>
+       <!-------------------------------addded by zakir --end ----------------->
+            
+
+            
+            
+    <style>
+        .action-btn{
+            width: 75px;
+            height: 30px;
+            font-size: 13px;
+        }
+
+        .acc-title{
+            font-size: 14px;
+            font-weight: 400;
+            text-transform: uppercase;
+        }
+        
+        .apend{
+            color:#fff;
+            text-align:left; 
+            background:#36b0d8; 
+            padding: 4px 0px 3px 2px; 
+            border-bottom: 1px solid #238eb1;
+        }
+        
+        .apend-text{
+            color:#fff; 
+            text-decoration:none;
+            font-size:12px;
+            padding:5px 5px 5px 5px;
+        }
+        
+        .apend-text a:hover {
+            color:#000; 
+            text-decoration:none;
+            font-size:13px;
+            padding:5px 5px 5px 5px;
+        }
+        
+        .inner{
+            color: #484848;
+            text-align: left;
+            font-size: 12px;
+            padding: 4px 0px 4px 15px;
+            background: #69d1f3;
+        }
+        
+        .inner-2{
+            color: #484848;
+            text-align: left;
+            font-size: 12px;
+            padding: 4px 0px 4px 0px;
+            background: #69d1f3;
+            
+        }
+        
+        .inner-1{
+            color: #484848;
+            font-size: 11px;
+            line-height: 17px;
+            text-transform:capitalize;
+        }
+        
+        .in{
+            width: 100%!important;
+            height: 24px; !important;
+            padding: 4px 7px !important;
+            font-size: 11px !important;
+            line-height: 1.42857143 !important;
+            color: #555 !important;
+            border-radius: 2px !important;
+        } 
+        
+        .bt{
+            width: 78px !important;
+            height: 26px !important;
+            font-size: 11px !important;
+            padding: 5px 9px !important;
+        }
+        
+        form-group{
+            margin-bottom:6px !important;
+        }
+        
+        .logo{
+          background-image: url("{!$Resource.DialX}");
+          height: 60px;
+          background-attachment: fixed;
+        }
+
+/* NUMBER PAD DESIGN */
+.span4
+{
+    width: 40px;
+    float: left;
+   margin: 0 4px 7px 0px;
+}
+
+.phone
+{
+    margin-top: 15px;
+    background: #fff;
+}
+.tel
+{
+    margin-bottom: 10px;
+    margin-top: 10px;
+    border: 1px solid #9e9e9e;
+    border-radius: 0px;
+}
+.num-pad
+{
+    padding-left: 15px;
+}
+
+
+.num
+{
+    border: 1px solid #0e76bc;
+    -webkit-border-radius: 999px;
+    border-radius: 999px;
+    -moz-border-radius: 999px;
+    height: 40px;
+    background-color: #fff;
+    color: #333;
+    cursor: pointer;
+}
+.num:hover
+{
+    background-color: #1689d6;
+    color: #fff;
+    transition-property: background-color .2s linear 0s;
+    -moz-transition: background-color .2s linear 0s;
+    -webkit-transition: background-color .2s linear 0s;
+    -o-transition: background-color .2s linear 0s;
+}
+.txt
+{
+    font-size: 22px;
+    text-align: center;
+    margin-top: 4px;
+    font-family: 'Lato' , sans-serif;
+    line-height: 30px;
+}
+.small
+{
+    font-size: 15px;
+}
+
+.btn
+{
+    font-weight: bold;
+    -webkit-transition: .1s ease-in background-color;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: 1px;
+}
+.btn:hover
+{
+    transition-property: background-color .2s linear 0s;
+    -moz-transition: background-color .2s linear 0s;
+    -webkit-transition: background-color .2s linear 0s;
+    -o-transition: background-color .2s linear 0s;
+}
+.spanicons
+{
+    width: 72px;
+    float: left;
+    text-align: center;
+    margin-top: 40px;
+    color: #9e9e9e;
+    font-size: 30px;
+    cursor: pointer;
+}
+.spanicons:hover
+{
+    color: #3498db;
+    transition-property: color .2s linear 0s;
+    -moz-transition: color .2s linear 0s;
+    -webkit-transition: color .2s linear 0s;
+    -o-transition: color .2s linear 0s;
+}
+.active
+{
+    color: #3498db;
+}
+
+
+/* CLOSED NUMBER PAD DESIGN */      
+        
+</style>
+  <script>
+    
+          function AddButtonValue(n){
+          // alert(n);
+            try{ if(n==1)
+                document.getElementById('number').value += '1';
+            else if(n==2)
+                document.getElementById('number').value += '2';
+            else if(n==3)
+                document.getElementById('number').value += '3';
+            else if(n==4)
+                document.getElementById('number').value += '4';
+            else if(n==5)
+                document.getElementById('number').value += '5';
+            else if(n==6)
+                document.getElementById('number').value += '6';
+            else if(n==7)
+                document.getElementById('number').value += '7'; 
+            else if(n==8)
+                document.getElementById('number').value += '8';
+            else if(n==9)
+                document.getElementById('number').value += '9';
+            else if(n=='*')
+                document.getElementById('number').value += '*';
+            else if(n=='#')
+                document.getElementById('number').value += '#';                                 
+              }catch(e){
+                      alert('=='+e);
+              }  
+                  
+          }
+       </script>   
+         
+                                
+        
+    <div class="row" style="margin-top:0px; width:196px; background:rgba(243, 243,243, 0.66);"  id="divid" >
+       
+            <div class="panel-body" style="padding: 0px 0px 0px 15px;">
+                
+                                    <!------------------------DialXchange--------------->
+                        <div style="position: fixed; text-align:center; padding: 0px 23px 0px 16px; background:#fff;">
+                         <apex:image url="{!$Resource.DialX}" height="60" />
+                        </div>
+                
+    
+                <div class="container" style="padding-right: 10px; padding-left: 10px; padding-top: 68px;">
+                
+          <apex:form id="formid1">
+               <apex:outputPanel > 
+                    <apex:selectList size="1" value="{!callerid1}" id="conTyp">
+                        <apex:selectOptions value="{!options}"/>   
+                        <apex:actionSupport event="onchange" reRender="k" />                 
+                    </apex:selectList>  <br/><br/>
+                
+                
+                </apex:outputPanel>
+         </apex:form>   
+                
+                    <div style="width:160px;">
+                    <div class="form-group" style="margin-bottom:6px">
+                      <input type="text" id="number" name="number" placeholder="Enter a ph. no. to call" class="form-control in" />  
+ 
+                    </div>
+                    
+                           <!-- number pad---------------------------------> 
+                   <!-- <div>
+                    
+                    
+                    <table id="dialpad" cellpadding="3%">
+                  
+                    <tr id="dial_row1">
+                     
+                    <td><button type="button" id="button1">1</button> </td>
+                     
+                    <td><button type="button" id="button2">2</button> </td>
+                     
+                    <td><button type="button" id="button3">3</button> </td>
+                     
+                    
+                    </tr>
+                     
+                    <tr id="dial_row2">
+                     
+                    <td><button type="button" id="button4">4</button> </td>
+                     
+                    <td><button type="button" id="button5">5</button></td>
+                     
+                    <td><button type="button" id="button6">6</button></td>
+                     
+                     
+                    </tr>
+                     
+                    <tr id="dial_row3">
+                     
+                    <td><button type="button" id="button7">7</button></td>
+                     
+                    <td><button type="button" id="button8">8</button></td>
+                     
+                    <td><button type="button" id="button9">9</button></td>
+                     
+                     
+                    </tr>
+                     
+                    <tr id="dial_row4">
+                     
+                    <td><button type="button" id="buttonstar">*</button></td>
+                     
+                    <td><button type="button" id="buttonzero">0</button></td>
+                     
+                    <td><button type="button" id="buttonhash">#</button></td>
+                     
+                    
+                     
+                    </tr>
+             
+                </table>
+                    </div>----> <br/>
+                    
+                    <!--##################################DIAL PAD DESIGN###################################----->
+                    <div style="width:160px;">
+                    <div class="num-pad">
+                    <div class="span4">
+                        <div class="num">
+                            <div class="txt" id="button1" onclick="AddButtonValue(1)">
+                                1
+                            </div>
+                        </div>
+                    </div>
+                    <div class="span4">
+                        <div class="num">
+                            <div class="txt" id="button2" onclick="AddButtonValue(2)">
+                                2
+                            </div>
+                        </div>
+                    </div>
+                    <div class="span4">
+                        <div class="num">
+                            <div class="txt" id="button3" onclick="AddButtonValue(3)">
+                                3 
+                            </div>
+                        </div>
+                    </div>
+                    <div class="span4">
+                        <div class="num">
+                            <div class="txt" id="button4" onclick="AddButtonValue(4)">
+                                4
+                            </div>
+                        </div>
+                    </div>
+                    <div class="span4">
+                        <div class="num">
+                            <div class="txt" id="button5" onclick="AddButtonValue(5)">
+                                5
+                            </div>
+                        </div>
+                    </div>
+                    <div class="span4">
+                        <div class="num">
+                            <div class="txt" id="button6" onclick="AddButtonValue(6)">
+                                6 
+                            </div>
+                        </div>
+                    </div>
+                    <div class="span4">
+                        <div class="num">
+                            <div class="txt" id="button7" onclick="AddButtonValue(7)">
+                                7
+                            </div>
+                        </div>
+                    </div>
+                    <div class="span4">
+                        <div class="num">
+                            <div class="txt" id="button8" onclick="AddButtonValue(8)">
+                                8
+                            </div>
+                        </div>
+                    </div>
+                    <div class="span4">
+                        <div class="num">
+                            <div class="txt" id="button9" onclick="AddButtonValue(9)">
+                                9 
+                            </div>
+                        </div>
+                    </div>
+                    <div class="span4">
+                        <div class="num">
+                            <div class="txt" id="buttonstar" onclick="AddButtonValue('*')">
+                                *
+                            </div>
+                        </div>
+                    </div>
+                    <div class="span4">
+                        <div class="num">
+                            <div class="txt" id="buttonzero" style="font-size: 18px!important; margin-top: 11px!important;">
+                               <p style="margin: 0; padding: 0; line-height: 3px; margin-top: 2px;">0</p>
+                               <p style="margin: 0; padding: 0; line-height: 3px; margin-top: 12px;">+</p>
+                               
+                            </div>
+                             <script>
+                                var aaa=document.getElementById('buttonzero');
+                                aaa.addEventListener('mousedown', function () {
+                                  mousedownTime = new Date().getTime();
+                                });                       
+                                aaa.addEventListener('mouseup', function () {
+                                  var mouseupTime = new Date().getTime(),
+                                  timeDifference = mouseupTime-mousedownTime ;
+                                  mouseUp(timeDifference) 
+                                });
+                                
+                                function mouseUp(k) {
+                                   // alert(k);
+                                    if(k>400)
+                                        document.getElementById('number').value += '+';
+                                    else
+                                        document.getElementById('number').value += '0';                           
+                                }
+                              </script>            
+                        </div>
+                    </div>
+                    <div class="span4">
+                        <div class="num">
+                            <div class="txt" id="buttonhash" onclick="AddButtonValue('#')">
+                                # 
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                    </div>
+                    <!--##################################DIAL PAD DESIGN CLOSE###################################----->
+             <!-- number pad--------------------------------->   
+                    
+                    <button class="call btn btn-success action-btn bt" onclick="call();" >
+                      Call
+                    </button>
+                                                                      
+                    <button id="hangUpid"  class="hangup btn btn-danger action-btn bt" onclick="hangup();">
+                      Hangup
+                    </button>
+                    
+                                      
+                    </div> 
+                    
+                        <!-------------------------  start table ----zakir---------------------------->
+             
+             <!---------------------- Current Calling ----START------------------->
+                <apex:outputPanel id="refresh1">
+                
+                  <apex:outputtext id="count2" value="" />
+
+                
+                
+           <!--      <table  style="font-family:Verdana, Geneva, sans-serif , margin-top: 30px;  font-size:13px;" width="180px" border="0"  cellpadding="3" cellspacing="3" > -->
+                 <table  style="margin-top: 5px;" width="160px" border="0"  cellpadding="3"  cellspacing="3"  >           
+                        <tr>
+                            <td bgcolor="#00a2e8" id="currentcallid" style="color:#fff; text-align:center; font-size:12px; padding:3px;">Current Call</td>
+                        </tr>
+                         
+                           <div style="text-align:left;" id="log"></div>
+                        <tr>
+                        
+                            <td>
+                                <table width="100%"> 
+                                <div class="form-group" style="margin-top: 5px; margin-bottom:6px">
+                                 <input type="text" id="namId" readonly="true"   style="font-weight: bold;  text-align: center;  " class="form-control in" />
+                                  </div>
+                                
+                                 <div class="form-group" style="margin-bottom: 4px;">
+                                <input type="text" id="phNumId"  readonly="true"     style="font-weight: bold; text-align: center; " class="form-control in" /> 
+                                </div>
+                                
+                                <div class="form-group" style="margin-top: 5px; margin-bottom:6px">
+                                 <input type="text" id="callstatusId" readonly="true"    style="font-weight: bold;  text-align: center;  " class="form-control in" />
+                                  </div>
+                                  
+                          <!------  MUTE  AND UNMUTE ---->      
+    
+                        <tr id="mute">
+                            <td class="tdcl" style="color:#fff; text-align:center;">
+                      
+                                <a style="cursor: pointer;"><i class="fa fa-microphone" aria-hidden="true" onclick="mute()" style="color:#e70f10;     margin-bottom: 10px;
+}"> Mute</i></a>
+                                
+                            </td>
+                        </tr>   
+               
+                        <tr id="unmute">
+                            <td class="tdcl" style="color:#fff; text-align:center;">
+                           
+                                <a style="cursor: pointer;"><i class="fa fa-microphone-slash" aria-hidden="true" onclick="unmute()" style="color:#1ebe1d;     margin-bottom: 10px;
+}"> Unmute</i></a>
+                            </td>
+                             
+                        </tr>
+                        
+                        <!--  minutes Points -->
+                    <tr id="minuteid">
+                         
+                         <td style="border:1px solid #dddddd; padding:2px; text-align:center;">
+                            <!--===========================Append Function==============================------>
+
+                            
+                            
+                            <!--================================================================------>
+                          <div style=" color:#333; font-size: 11px; text-align: center;">
+                                <p style="padding-top:2px; margin: 0 0 2px;"><strong>CALL BACK</strong></p>    
+                            </div>   
+                            
+                                <div style="padding-bottom:5px;"> 
+                                    
+                                        <button class="btn btn-info" onclick="Task15()" style="width: 47px;  height: 29px; font-size: 10px !important;  padding: 0;">15 Min</button>
+                                        <button class="btn btn-info" onclick="Task30()" style="width: 47px;  height: 29px; font-size: 10px !important;  padding: 0;">30 Min</button>
+                                        <button class="btn btn-info" onclick="TaskHalf()" style="width: 47px;  height: 29px; font-size:10px !important;  padding: 0;">1 hours</button>
+                                        <button class="btn btn-info" onclick="TaskDay()" style="width: 147px; height: 29px; font-size: 10px !important; padding: 0; margin: 5px 0px 0px 0px;">Call Tomorrow</button>
+                               
+                                </div>
+                         </td>
+
+                    </tr> 
+                    
+                      
+                            <div style="visibility: hidden;"  >
+                                <input type="text" id="TaskIdfirst"  readonly="true"     style="font-weight: bold; text-align: center; " class="form-control in" /> 
+                            </div>   
+                     
+                                </table>
+                            </td>
+                        </tr>
+                   
+                          </table>
+                        </apex:outputPanel>
+                        
+                        
+                         
+                        
+                        <!---------------------- Current Calling ----END------------------->
+            
+            
+            
+            
+                        <!-----------------------ADD NOTE -------------------->
+        <apex:form id="noteformid">             
+             <table  style="margin-top:2px;" width="160px" border="0"  cellpadding="3"  cellspacing="3"  >   
+                                   <!--     <table width="200px" border="0" cellpadding="3" cellspacing="3" style="margin-top: 15px;" >  -->
+ 
+                     <!--<tr id="addnote">
+                            <td bgcolor="#8f96a0" onclick="hideOrShow('note');" style="color:#fff;">Add Note</td>
+                        </tr> --->           
+                     <tr id="note">
+                            <td>
+                                <table width="100%">
+                                    <tr>
+                                        <td id="note"> 
+                                        
+                                             
+                                           <!-- <textarea class="form-control" rows="2" value="{!CallNote}" id="callnoteId"></textarea>--->
+                                        
+                                        
+                                         <div class="form-group" style="margin-bottom:6px">
+                                            <label for="comment">Add Note</label>
+                                            <apex:inputTextArea value="{!CallNote}" id="callnoteId" style="height:50px; width:100%; border:solid #CCC 1px; outline:none; padding-left:6px; padding-right:6px; font-size: 11px;" styleclass="form-control"/> 
+                                         </div> 
+                                        </td>                
+                                    </tr>
+                                    <tr>
+                                          <td  align="right"> 
+                                            <button class="call btn btn-primary action-btn bt" onclick="getRemoteSaveNote(event)" reRender="none" status="status" >
+                                                Save
+                                            </button>
+                                            
+                                            <div class="form-group" style="margin-top: 5px; margin-bottom:6px">
+                                                <input type="text" id="saveid" readonly="true"    style="text-align:centre;  " class="form-control in" />
+                                            </div>
+                                                        
+                                            <!--<apex:commandbutton onclick="getRemoteSaveNote()" value="Save" reRender="ff" status="status"/> --->
+                                        </td>   
+                                    </tr>
+                                    
+                                </table>
+                            </td>
+                        </tr>
+                                            
+                        </table>
+        </apex:form>                
+      
+                                    <!-----------------------ADD NOTE ----END ---------------->
+    
+        <!--  Task Action Function -->
+             
+  
+  
+  
+     <apex:form id="formid">
+     
+                                    
+                <apex:actionFunction action="{!createTsk15}" name="Task15" rerender="formid">
+                    <apex:param name="" assignTo="{!state}"  value="" />
+                    </apex:actionFunction>    
+      
+
+     <apex:outputpanel id="refresh2">
+           <apex:pageBlock id="pbid">
+                <apex:pageBlockSection id="pbs1">             
+              <!--     <apex:outputText label="objidValue:-" id="objid" > </apex:outputText>   -->
+                </apex:pageBlockSection>   
+           </apex:pageBlock>
+           
+                            <table width="160px" border="0" cellpadding="3" cellspacing="3" style="margin-top: 10px;" >
+                             <tr><td class="tdcl apend"><apex:commandLink value="Create Account" onclick="JavaScript:window.open('/001/e?retURL=%2F00Q%2Fo','ContactDetails','height=500, width=500');" styleclass="acl apend-text"/></td></tr>
+                              <tr><td class="tdcl apend"><apex:commandLink value="Create Contact" onclick="JavaScript:window.open('/003/e?retURL=%2F00Q%2Fo','ContactDetails','height=500, width=500');" styleclass="acl apend-text"/></td></tr>
+                          <tr><td class="tdcl apend"><apex:commandLink value="Create Lead" onclick="JavaScript:window.open('/00Q/e?retURL=%2F00Q%2Fo','ContactDetails','height=500, width=500');" styleclass="acl apend-text"/></td></tr>                          
+                          <!--<tr id="callStatus">
+                                <td class="tdcl apend">  
+                             <apex:commandLink styleclass="acl apend-text" onclick="updateleadstatus();" target="_blank" reRender="ff" >
+                               Update Status <span></span>
+                            </apex:commandLink>      
+                                </td>                    
+                            </tr> -->  
+                                   
+                            <tr id="sendmail">
+                                <td onclick="hideOrShow('sm');" class="apend apend-text">  
+                                    Send Email
+                                </td>  
+                            </tr>                
+           
+
+                          <tr id="sm">
+                            <td>    
+                            <table width="100%">
+
+                       
+                              <tr id="nscoems">
+                                <td class="inner" >
+                                    <apex:commandlink styleclass="acl inner-2"  onclick="invite();" rerender="ff">              
+                                       Email
+                                    </apex:commandlink>     
+                                </td>
+                            </tr>       
+                            
+                            <tr id="nscoems">
+                                <td onclick="hideOrShow('ncsoem');" class="inner" >
+                                    Solar Email Templates
+                                </td>
+                            </tr>
+                            
+                            
+                            
+                            
+          
+             <!----------------Main Email--Template------------>
+                            
+                            
+                            <tr id="ncsoem">
+                                <td>
+                                    <table width="160px" id="table_email">
+                                       <apex:repeat value="{!Emailtemplist}" var="emailtemp">
+                                        <tr>
+                                            <td class="tdcl">
+                                  
+                                <!-- testing  -->              
+                                    <apex:commandLink styleclass="acl" target="_blank" onclick="popUp('/_ui/core/email/author/EmailAuthor?template_id={!emailtemp.id}');" rerender="ff" >   
+                                         {!emailtemp.Name}                   
+                                    </apex:commandLink>     
+                                <!-- testing  -->                
+                                          </td>
+                                            <td></td>
+                                        </tr>
+                                        </apex:repeat>    
+                                     </table>
+                                 </td>
+                            </tr>
+                            
+                        </table>
+                            </td>
+                            </tr>
+
+                            <tr id="Demo"> 
+                                <td onclick="hideOrShow('sad');" class="tdcl apend apend-text" >    
+                                    Set Appointment For Demo
+                                </td>    
+                            </tr>   
+
+                            
+                            <tr id="sad">
+                                <td>
+                                    <table width="100%">
+                                        <tr>
+                                            <td class="tdcl inner">
+                                             <apex:commandlink styleclass="acl inner-2"  onclick="popUp('https://www.google.com/calendar/event?action=TEMPLATE');" rerender="ff">   
+                                                    Google Calender
+                                                 </apex:commandlink>
+                                            </td>
+                                        </tr>   
+                                        
+                                    <!--   <tr>
+                                          <td class="tdcl inner">  -->
+             <!--   <apex:commandlink styleclass="acl"  onclick="popUp('{!URLFOR($Action.Lead.SendGmail, l.Id)}');" rerender="ff"> -->
+                                    <!--       <apex:commandlink styleclass="acl inner-2"  onclick="invite();" rerender="ff">              
+                                             Invite
+                                           </apex:commandlink>     
+                                                
+                                            </td>            
+                                        </tr>  -->
+                                    </table>
+                                </td>
+                            </tr>
+                            
+                           <tr id="setcallback">
+                                <td onclick="hideOrShow('sc');" class="apend apend-text" >
+                                    Set CallBack
+                                </td>
+                            </tr>            
+                        
+                        <tr id="sc">
+                                <td>
+                                    <table width="100%">
+                                        <tr>
+                                            <td class="inner-2">
+                                                
+                                     <!--   <apex:commandlink styleclass="acl" target="_blank" onclick="popUp('/00T/e?who_id={!l.id}&retURL=/{!l.id}&00Nd0000007MQdI=1');" rerender="ff">  -->
+                                      <apex:commandlink styleclass="acl inner" target="_blank" onclick="Task();" rerender="ff">
+                                                            
+                                             Task
+                                           </apex:commandlink>
+                                             </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            
+                       <tr id="addevent">
+                                 <td class="tdcl apend apend-text">
+                         <!-- <apex:commandlink styleclass="acl" target="_blank" onclick="popUp('/00U/e?who_id={!l.id}&retURL=/{!l.id}&00Nd0000007MQdI=1');" rerender="ff">   -->
+                                    <apex:commandlink styleclass="acl apend-text" target="_blank" onclick="addevent();" rerender="ff"> 
+
+ 
+                                          
+                                        Add Event
+                                    </apex:commandlink>  
+
+ 
+                                        
+                                </td>    
+                            </tr>                                    
+                        </table>
+              </apex:outputPanel>     
+                        
+         </apex:form>            
+                
+         <!-------------------------------------  end table -----------zakir-------------------->
+         
+                </div>
+        </div>
+    </div>
+
+    <script>
+        $(function() {
+            $(".expand").on( "click", function() {
+                // $(this).next().slideToggle(200);
+                $expand = $(this).find(">:first-child");
+
+                if($expand.text() == "<i class="fa fa-chevron-down" aria-hidden="true" ></i>"){
+                  $expand.text("-");
+                } else {
+                  $expand.text("<i class="fa fa-chevron-down"
+    aria-hidden="true"></i>");
+                }
+            });
+        });
+    </script>
+    
+    
+    
+
+        <apex:form >
+               <apex:actionFunction name="createTask" action="{!createTask}" rerender="out" status="myStatus"/>
+        </apex:form>
+<!--######################################NUMBER DIAL PAD SCRIPT##############################################--->      
+ </body>      
+     </apex:page>
+     ****************************************apex class********************************
+     global  class TwilioClientController_clone_Zakir{
+         public list<selectOption> options{get;set;}
+         public string callerid1{get;set;}
+        
+        private TwilioCapability capability;
+        public String uname {get; set;}
+        private string callingType; 
+        public string  oid {get;set;}
+        public string val1 {get;set;}
+        public string valId {get;set;}
+        public String State {get;set;}
+         
+    //   added by zakir 
+       public list<EmailTemplate> EmailTemplist{get;set;}
+       public list<EmailTemplate> EmailTemplistUser{get;set;}    
+       public string whoid{get;set;}
+         
+      
+        private lead CallingLead;
+    //  public String PhoneNumber;  
+         public string leaid1; 
+         
+         string PhoneNumber = '';  
+         string UserNumber = '';
+         string LeadNumber = '';
+         string siteURL1 = '';
+         
+         //--------------  Added by zakir -----
+    //   =================== Incoming Call Methods End====================
+    
+    public string display(){
+     
+      system.debug('Action Function Value ----->'+val1);
+    // string valId = val1;
+      string valId = '00Q4B000006DkUO'; 
+      
+      return valId ;
+    }
+    
+   
+     public string CallNote{
+        get{
+            return CallNote ;  
+        }
+        set{
+         CallNote = value;
+            system.debug('Call note ---->'+CallNote );
+            system.debug('Call note ---->'+value );
+
+        }
+    }
+       /* edited by vidyut & zakir */
+        
+        public void createTsk15() {
+                system.debug('---createTsk15---');
+            Task newTask = new Task( 
+            Priority = 'Normal',
+           // Status = 'Inbound Email',
+            Subject = 'Call',
+     //       WhatId = '0015D00000A1dlW',
+            IsReminderSet = true,
+            ReminderDateTime = Datetime.now().addMinutes(+15));
+            insert newTask;
+        }
+        
+        public void createTsk30() {
+                system.debug('---createTsk15---');
+            Task newTask = new Task( 
+            Priority = 'Normal',
+           // Status = 'Inbound Email',
+            Subject = 'Call',
+      //      WhatId = '0015D00000A1dlW',
+            IsReminderSet = true,
+            ReminderDateTime = Datetime.now().addMinutes(+30));
+            insert newTask;
+        }
+        
+        public void createTsk1hrs() {
+                system.debug('---createTsk15---');
+            Task newTask = new Task( 
+            Priority = 'Normal',
+            //Status = 'Inbound Email',
+            Subject = 'Call',
+      //      WhatId = '0015D00000A1dlW',
+            IsReminderSet = true,
+            ReminderDateTime = Datetime.now().addMinutes(+59));
+            insert newTask;
+        }
+
+    
+@RemoteAction
+    global static  list<task> getTaskFirst(id obid){
+    
+        Id strId =  obid;
+        system.debug('=======check sobject Type====='+strId.getSobjectType());
+        List<Task> latestTasks = new List<Task>();
+    
+                
+        
+                if (strId.getSObjectType() == Schema.Account.SObjectType) {
+                    System.debug('This is a Account');
+                    
+                    Task newTask = new Task( 
+                    Priority = 'Normal',
+                   // Status = 'Inbound Email',
+                    Subject = 'Call',
+                    WhatId = obid,
+                    ActivityDate = system.today(),
+                    IsReminderSet = true,
+                    ReminderDateTime = Datetime.now().addMinutes(+15));
+                    insert newTask; 
+                    
+                    for(Account acc : [Select Id, Name,(Select Id, Subject from Tasks Order by CreatedDate DESC Limit 1) from Account where id =: obid]){
+                        latestTasks.addall(acc.Tasks); 
+                     system.debug('latestTasks--->'+latestTasks);
+         
+                    } 
+                }
+                else if (strId.getSObjectType() == Schema.Contact.SObjectType) {
+                    System.debug('This is a Contact');
+                    Task newTask = new Task( 
+                        Priority = 'Normal',
+                       // Status = 'Inbound Email',
+                        Subject = 'Call',
+                        WhoId = obid,
+                        ActivityDate = system.today(),
+                        IsReminderSet = true,
+                        ReminderDateTime = Datetime.now().addMinutes(+15));
+                        insert newTask; 
+                        
+                    for(Contact acc1 : [Select Id, Name,(Select Id, Subject from Tasks Order by CreatedDate DESC Limit 1) from Contact where id =: obid]){
+                        latestTasks.addall(acc1.Tasks); 
+                     system.debug('latestTasks--->'+latestTasks);
+         
+                    } 
+                }   
+                else if (strId.getSObjectType() == Schema.Lead.SObjectType) {
+                    System.debug('This is a Lead');
+                    Task newTask = new Task( 
+                        Priority = 'Normal',
+                        //Status = 'Inbound Email',
+                        Subject = 'Call',
+                        WhoId = obid,
+                        ActivityDate = system.today(),
+                        IsReminderSet = true,
+                        ReminderDateTime = Datetime.now().addMinutes(+15));
+                        insert newTask; 
+                    
+                    for(Lead acc2 : [Select Id, Name,(Select Id, Subject from Tasks Order by CreatedDate DESC Limit 1) from Lead where id =: obid]){
+                        latestTasks.addall(acc2.Tasks); 
+                        system.debug('latestTasks--->'+latestTasks);
+                    }
+                } 
+      
+      // system.debug('getTaskFirst id --->'+obid);
+    
+        return latestTasks;
+    }
+    
+@RemoteAction
+    global static  list<task> getTaskSecond(id obid){
+           Id strId =  obid;
+        system.debug('=======check sobject Type====='+strId.getSobjectType());
+        List<Task> latestTasks = new List<Task>();
+    
+                
+        
+                if (strId.getSObjectType() == Schema.Account.SObjectType) {
+                    System.debug('This is a Account');
+                    
+                    Task newTask = new Task( 
+                    Priority = 'Normal',
+                   // Status = 'Inbound Email',
+                    Subject = 'Call',
+                    WhatId = obid,
+                    ActivityDate = system.today(),
+                    IsReminderSet = true,
+                    ReminderDateTime = Datetime.now().addMinutes(+30));
+                    insert newTask; 
+                    
+                    for(Account acc : [Select Id, Name,(Select Id, Subject from Tasks Order by CreatedDate DESC Limit 1) from Account where id =: obid]){
+                        latestTasks.addall(acc.Tasks); 
+                     system.debug('latestTasks--->'+latestTasks);
+         
+                    } 
+                }
+                else if (strId.getSObjectType() == Schema.Contact.SObjectType) {
+                    System.debug('This is a Contact');
+                    Task newTask = new Task( 
+                        Priority = 'Normal',
+                       // Status = 'Inbound Email',
+                        Subject = 'Call',
+                        WhoId = obid,
+                        ActivityDate = system.today(),
+                        IsReminderSet = true,
+                        ReminderDateTime = Datetime.now().addMinutes(+30));
+                        insert newTask; 
+                        
+                    for(Contact acc1 : [Select Id, Name,(Select Id, Subject from Tasks Order by CreatedDate DESC Limit 1) from Contact where id =: obid]){
+                        latestTasks.addall(acc1.Tasks); 
+                     system.debug('latestTasks--->'+latestTasks);
+         
+                    } 
+                }   
+                else if (strId.getSObjectType() == Schema.Lead.SObjectType) {
+                    System.debug('This is a Lead');
+                    Task newTask = new Task( 
+                        Priority = 'Normal',
+                       // Status = 'Inbound Email',
+                        Subject = 'Call',
+                        WhoId = obid,
+                        ActivityDate = system.today(),
+                        IsReminderSet = true,
+                        ReminderDateTime = Datetime.now().addMinutes(+30));
+                        insert newTask; 
+                    
+                    for(Lead acc2 : [Select Id, Name,(Select Id, Subject from Tasks Order by CreatedDate DESC Limit 1) from Lead where id =: obid]){
+                        latestTasks.addall(acc2.Tasks); 
+                        system.debug('latestTasks--->'+latestTasks);
+                    }
+                } 
+      
+      // system.debug('getTaskFirst id --->'+obid);
+    
+        return latestTasks;
+    }   
+    
+    
+ 
+ @RemoteAction
+    global static  list<task> getTaskThird(id obid){
+           Id strId =  obid;
+        system.debug('=======check sobject Type====='+strId.getSobjectType());
+        List<Task> latestTasks = new List<Task>();
+    
+                
+        
+                if (strId.getSObjectType() == Schema.Account.SObjectType) {
+                    System.debug('This is a Account');
+                    
+                    Task newTask = new Task( 
+                    Priority = 'Normal',
+                   // Status = 'Inbound Email',
+                    Subject = 'Call',
+                    WhatId = obid,
+                    ActivityDate = system.today(),
+                    IsReminderSet = true,
+                    ReminderDateTime = Datetime.now().addMinutes(+59));
+                    insert newTask; 
+                    
+                    for(Account acc : [Select Id, Name,(Select Id, Subject from Tasks Order by CreatedDate DESC Limit 1) from Account where id =: obid]){
+                        latestTasks.addall(acc.Tasks); 
+                     system.debug('latestTasks--->'+latestTasks);
+         
+                    } 
+                }
+                else if (strId.getSObjectType() == Schema.Contact.SObjectType) {
+                    System.debug('This is a Contact');
+                    Task newTask = new Task( 
+                        Priority = 'Normal',
+                        //Status = 'Inbound Email',
+                        Subject = 'Call',
+                        WhoId = obid,
+                        ActivityDate = system.today(),
+                        IsReminderSet = true,
+                        ReminderDateTime = Datetime.now().addMinutes(+59));
+                        insert newTask; 
+                        
+                    for(Contact acc1 : [Select Id, Name,(Select Id, Subject from Tasks Order by CreatedDate DESC Limit 1) from Contact where id =: obid]){
+                        latestTasks.addall(acc1.Tasks); 
+                     system.debug('latestTasks--->'+latestTasks);
+         
+                    } 
+                }   
+                else if (strId.getSObjectType() == Schema.Lead.SObjectType) {
+                    System.debug('This is a Lead');
+                    Task newTask = new Task( 
+                        Priority = 'Normal',
+                       // Status = 'Inbound Email',
+                        Subject = 'Call',
+                        WhoId = obid,
+                        ActivityDate = system.today(),
+                        IsReminderSet = true,
+                        ReminderDateTime = Datetime.now().addMinutes(+59));
+                        insert newTask; 
+                    
+                    for(Lead acc2 : [Select Id, Name,(Select Id, Subject from Tasks Order by CreatedDate DESC Limit 1) from Lead where id =: obid]){
+                        latestTasks.addall(acc2.Tasks); 
+                        system.debug('latestTasks--->'+latestTasks);
+                    }
+                } 
+      
+      // system.debug('getTaskFirst id --->'+obid);
+    
+        return latestTasks;
+    }   
+    
+
+@RemoteAction
+    global static  list<task> getTaskday(id obid){
+           Id strId =  obid;
+        system.debug('=======check sobject Type====='+strId.getSobjectType());
+        List<Task> latestTasks = new List<Task>();
+    
+                
+        
+                if (strId.getSObjectType() == Schema.Account.SObjectType) {
+                    System.debug('This is a Account');
+                    
+                    Task newTask = new Task( 
+                    Priority = 'Normal',
+                    //Status = 'Inbound Email',
+                    Subject = 'Call',
+                    WhatId = obid,
+                    ActivityDate = system.today()+2,
+                    IsReminderSet = true,
+                    ReminderDateTime = Datetime.now().AddHours(24));  
+                    insert newTask; 
+                    
+                    for(Account acc : [Select Id, Name,(Select Id, Subject from Tasks Order by CreatedDate DESC Limit 1) from Account where id =: obid]){
+                        latestTasks.addall(acc.Tasks); 
+                     system.debug('latestTasks--->'+latestTasks);
+         
+                    } 
+                }
+                else if (strId.getSObjectType() == Schema.Contact.SObjectType) {
+                    System.debug('This is a Contact');
+                    Task newTask = new Task( 
+                        Priority = 'Normal',
+                        Status = 'Inbound Email',
+                        Subject = 'Call',
+                        WhoId = obid,
+                        ActivityDate = system.today(),
+                        IsReminderSet = true,
+                        ReminderDateTime = Datetime.now().AddHours(24)); 
+                        insert newTask; 
+                        
+                    for(Contact acc1 : [Select Id, Name,(Select Id, Subject from Tasks Order by CreatedDate DESC Limit 1) from Contact where id =: obid]){
+                        latestTasks.addall(acc1.Tasks); 
+                     system.debug('latestTasks--->'+latestTasks);
+         
+                    } 
+                }   
+                else if (strId.getSObjectType() == Schema.Lead.SObjectType) {
+                    System.debug('This is a Lead');
+                    Task newTask = new Task( 
+                        Priority = 'Normal',
+                        Status = 'Inbound Email',
+                        Subject = 'Call',
+                        WhoId = obid,
+                        ActivityDate = system.today(),
+                        IsReminderSet = true,
+                        ReminderDateTime = Datetime.now().AddHours(24)); 
+                        insert newTask; 
+                    
+                    for(Lead acc2 : [Select Id, Name,(Select Id, Subject from Tasks Order by CreatedDate DESC Limit 1) from Lead where id =: obid]){
+                        latestTasks.addall(acc2.Tasks); 
+                        system.debug('latestTasks--->'+latestTasks);
+                    }
+                } 
+      
+      // system.debug('getTaskFirst id --->'+obid);
+    
+        return latestTasks;
+    }       
+    
+    
+    
+    
+    
+@RemoteAction
+        global static string getSaveNote(id obid, string noteval){
+            system.debug('Remoting Save Note Object Id --------->'+obid);
+             system.debug('Remoting Notevalue --------->'+noteval);
+            
+              Note__c n = new Note__c(); 
+            
+            if(obid != null){
+       
+              
+               schema.sobjectType  token  = obid.getSobjectType();
+              Schema.DescribeSObjectResult dr = token.getDescribe();
+                if(dr.getName() == 'Lead'){ 
+                        n.Lead__c = obid; 
+                       
+                }
+                 else if(dr.getName() == 'Account'){ 
+                        n.Account__c = obid;
+                }else if(dr.getName()== 'Contact'){ 
+                        n.Contact__c = obid; 
+              //         n.Account__c = con.AccountId; 
+                }else if(dr.getName() == 'Opportunity'){
+                   //     n.Opportunity__c = obid; 
+                   system.debug('k');
+                }   
+                n.Note__c = 'Call Note: '+noteval  ;
+                n.Title__c = 'Call on '+Datetime.now();    
+                try{
+                     insert n;
+         //           callNote = '';
+                }catch(Exception e){}
+             
+              
+          }
+                 return null;
+        }   
+        
+     
+         
+         
+        //****** Initalizer - Set up Twilio Capability Token - requires ApplicationSid__c to be set
+           public TwilioClientController_clone_Zakir() {
+            leaid1 = System.currentPageReference().getParameters().get('RecordId'); 
+            capability = TwilioAPI.createCapability();                                     
+             string appidd = TwilioConfig__c.getInstance('Twilio C2D New').ApplicationSid__c;  
+            capability.allowClientOutgoing(appidd, null);   
+            capability.allowClientIncoming('salesforce_agent');
+              
+             string a = TwilioConfig__c.getInstance('Twilio C2D New').ApplicationSid__c;
+             system.debug('a-------------- '+a);
+              
+              
+              //picklist values to be selected as callerid
+                options = new List<SelectOption>();
+               options.add(new SelectOption('None','SELECT CALLER ID'));
+            options.add(new SelectOption('+14159939609','+14159939609'));
+            options.add(new SelectOption('+61255516155','+61255516155'));
+            options.add(new SelectOption('+442038933443','+442038933443'));  
+             options.add(new SelectOption('+9718000320332','+9718000320332'));   
+            system.debug('callerid1---------- '+callerid1);
+              
+         //----------------------Added By zakir ---------------------------------  
+              EmailTemplist = new list<EmailTemplate>();
+              EmailTemplistUser = new list<EmailTemplate>();
+    
+        EmailTemplist = [Select e.TimesUsed, e.TemplateType, e.TemplateStyle, e.SystemModstamp, e.Subject, e.OwnerId, e.NamespacePrefix, e.Name, 
+                e.Markup, e.LastUsedDate, e.LastModifiedDate, e.LastModifiedById, e.IsActive, e.Id, e.HtmlValue, e.FolderId, e.Encoding, e.DeveloperName, 
+                e.Description, e.CreatedDate, e.CreatedById, e.BrandTemplateId, e.Body, e.ApiVersion 
+                From EmailTemplate e where IsActive = true and Folder.Name Like '%My Emails%' order by Name asc];
+                
+        EmailTemplistUser = [Select e.TimesUsed, e.TemplateType, e.TemplateStyle, e.SystemModstamp, e.Subject, e.OwnerId, e.NamespacePrefix, e.Name, 
+                e.Markup, e.LastUsedDate, e.LastModifiedDate, e.LastModifiedById, e.IsActive, e.Id, e.HtmlValue, e.FolderId, e.Encoding, e.DeveloperName, 
+                e.Description, e.CreatedDate, e.CreatedById, e.BrandTemplateId, e.Body, e.ApiVersion 
+                From EmailTemplate e where IsActive = true and Folder.Name like: '%'+Userinfo.getFirstName()+'%' order by Name asc];
+                
+                  //----------------------Added By zakir ---------------------------------    
+
+        }
+        
+        //******* {!Token} method returns a string based capability token
+        public String getToken() { return capability.generateToken(); }
+        
+        //******* Pass in a parameter PhoneNumber - and this will Dial the phone number
+        public String getDial() {
+        
+        String siteURL = '';
+        callingType = '';
+            siteURL = TwilioConfig__c.getInstance('Twilio C2D New').Force_com_Site_Base_URL__c;
+            system.debug('siteURL--------- '+siteURL);
+     //     siteURL1 = 'http://12dec17-sfclouds.cs72.force.com/SalesforceAdvantageTour';
+        //  String callerid = TwilioConfig__c.getInstance('Twilio C2D New').CallerId__c; 
+           String callerid =  Apexpages.currentPage().getParameters().get('calerid');      
+            //phone number will be passed as http query parameter
+            
+            //'PhoneNumber' parameter is for standard click2dial
+            string phNum = System.currentPageReference().getParameters().get('PhoneNumber');
+            // 'To' parameter is for dialing the lead's owner
+            string phNum1 = System.currentPageReference().getParameters().get('To');
+            // 'callLead' parameter is to dial the newly inserted lead
+            string LeadNumber = System.currentPageReference().getParameters().get('callLead');
+            callingType = Apexpages.currentPage().getParameters().get('ct');
+            string strid = '+14159939609';
+            
+         TwilioTwiML.Response res = new TwilioTwiML.Response();            
+             if(string.isNotBlank(phNum)){
+            PhoneNumber = phNum; 
+            TwilioTwiML.Dial d = new TwilioTwiML.Dial(PhoneNumber);
+            d.setAction(siteURL+'/CallEndedVerbforC2Dial?lastCallerWas='+leaid1);
+            d.setRecord(true);
+            d.setCallerId(strid);
+            res.append(d);           
+            }  
+            
+       
+            
+       
+         return res.toXML();  
+                    
+   }                 
+        
+        
+        public string OidM(){
+         return oid;
+        
+        
+        }
+         
+        
+       /**------------------task creation method------------------------- **/
+       
+       public void createTask(){
+        task task = new task();
+        task.Subject = 'Call';
+        task.status = 'Not Started';  
+        task.whoid = leaid1;
+        insert task;
+               
+       
+       }
+        
+        
+         
+    
+    }

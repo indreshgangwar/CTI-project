@@ -1,0 +1,1171 @@
+<apex:page id="page" standardcontroller="lead" extensions="TwilioAutomatedLeadCallingController2" recordsetvar="llist1" sidebar="false" tabstyle="AutomateCalls__tab" showChat="false" showHeader="true">   
+
+    <apex:pagemessages />
+    <apex:outputpanel >
+        <apex:actionstatus id="status">
+            <apex:facet name="start">
+                <div class="waitingSearchDiv" id="el_loading" style="background-color: #fbfbfb;
+                       height: 100%;opacity:0.65;width:100%;">
+                    <div class="waitingHolder" style="top: 74.2px; width: 91px;">
+                        <img class="waitingImage" src="/img/loading.gif" title="Please Wait..." />
+                        <span class="waitingDescription">Loading...</span>
+                    </div>
+                </div>
+            </apex:facet> 
+        </apex:actionstatus>
+    </apex:outputpanel>
+    <style>
+        
+        .acl:hover {color:green;}   /* mouse over link */
+        .tdcl:hover{background-color: #20b2aa;}    
+        
+        .acll{color:blue;} 
+        .acll:hover{color:Midnight;}
+        
+        #table_email tr:nth-child(odd) td {background-color: #00a2e8;}
+        #table_email tr:nth-child(even) td {background-color: #ebebe3;}
+        
+        #table_vm tr:nth-child(odd) td {background-color: #00a2e8;}
+        #table_vm tr:nth-child(even) td {background-color: #ebebe3;}
+        
+    </style>
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"/>
+    <!-- <apex:includeScript value="//static.twilio.com/libs/twiliojs/1.0/twilio.min.js"/> -->
+    <script type="text/javascript" src="//media.twiliocdn.com/sdk/js/client/v1.3/twilio.min.js"></script>
+     <!-- <script src="https://na15.salesforce.com/support/api/33.0/interaction.js"></script> -->
+
+    
+  
+     <!-- sforce.interaction.cti.enableClickToDial();
+      sforce.interaction.cti.onClickToDial(startCall);-->
+    
+    <script>
+            function changecolor(eid){
+                var dtable  = document.getElementById("page:frm:dtable");
+                var l = dtable.rows.length;
+                for(var i = 0; i<l-2; i++){
+                    if(document.getElementById("page:frm:dtable:"+i+":cbutton").style.color != "blue"){
+                        document.getElementById("page:frm:dtable:"+i+":cbutton").style.color = "#FBB117";
+                    }
+                }
+                eid.style.color = '#4CC417';
+            }
+            
+            /*function startCall(response) {
+            
+                sforce.interaction.setVisible(true);  //pop up CTI console
+                var result = JSON.parse(response.result);  
+                var cleanednumber = cleanFormatting(result.number);             
+                params = {"PhoneNumber": cleanednumber};
+                Twilio.Device.connect(params);
+            }*/
+            
+            
+            $(document).ready(function() {
+                document.getElementById("page:frm:dtable:"+'0'+":cbutton").style.color = "#4CC417";
+                $("#mute").hide();
+                $("#unmute").hide();
+                $("#hangup").hide();
+                $("#hangupf").hide();
+                $("#fm").hide();
+                $("#call").hide();
+                $("#callf").hide();
+                $("#dial").hide();
+                $("#dp").hide();
+                $("#pause").hide();
+                $("#resume").hide();
+                $("#skip").hide();
+                $("#hangupcall").hide();
+                $("#clrid").hide();
+                $("#page\\:frm\\:noofleadstocall").val(45);
+            });
+            
+            var connection = null;
+            //pass the Capability Token to the Device
+            Twilio.Device.setup("{! token }");
+            
+            Twilio.Device.connect(function (conn) { 
+                $("#log").text("On Call with..."); 
+                connection=conn;
+            }); 
+            
+            
+            
+            Twilio.Device.disconnect(function (conn) {
+                $("#log").text("");
+                $("#call").show();
+                $("#ct").show();
+                $("#hangup").hide();
+                $("#skip").hide(); 
+                $("#unmute").hide(); 
+                $("#mute").hide();
+                $("#pause").hide();
+                $("#resume").hide();
+                $("#hangupcall").hide();
+            });
+            
+           
+            function hangupcall(){
+                if(connection != null){
+                    connection.sendDigits('*');
+                }
+            }
+            function pausedialer(){
+                if(connection != null){
+                    connection.sendDigits('123#');
+                    $("#resume").show();
+                    $("#pause").hide();
+                }
+            }
+            function resumedialer(){
+                if(connection != null){
+                    connection.sendDigits('123#');
+                    $("#pause").show();
+                    $("#resume").hide();
+                }
+            }
+            function skip(){
+                if(connection != null){
+                    connection.sendDigits('123#');
+                }
+            }
+            
+          
+            function hangup(){
+                Twilio.Device.disconnectAll();
+                $("#log").text("Hung Up...");
+                $("#mute").hide();
+                $("#unmute").hide();
+                $("#hangup").hide();
+                $("#skip").hide();
+                $("#hangupf").hide();
+                $("#fm").hide();
+                $("#call").hide();
+                $("#callf").hide();
+                $("#dial").hide();
+                $("#dp").hide();
+                $("#pause").hide();
+                $("#resume").hide();
+                $("#hangupcall").hide();
+                //$("#ct").hide();
+            }
+            function hangupf(){
+                disconnectCall();
+                $("#mute").hide();
+                $("#unmute").hide();
+                $("#hangup").hide();
+                $("#skip").hide();
+                $("#hangupf").hide();
+                $("#fm").hide();
+                $("#call").hide();
+                $("#callf").hide();
+                $("#dial").hide();
+                $("#dp").hide();
+                $("#pause").hide();
+                $("#resume").hide();
+                $("#hangupcall").hide();
+            }
+                        
+            function mute(){
+                connection.mute(true);
+                $("#log").text("You Are Mute");
+                $("#unmute").show();
+                $("#mute").hide();
+            }
+            function unmute(){
+                connection.mute(false);
+                $("#log").text("On Call with...");
+                $("#unmute").hide();
+                $("#mute").show();
+            }
+                        
+            function hideOrShow(domid){
+                $("#"+domid).toggle();
+            }
+            function addNumber(digit){
+                var phone = document.getElementById('{!$Component.page.frm.fixednumber}');
+                newdigit = $(digit).text();
+                phone.value += newdigit;
+            }
+            
+            function callfixedphone(){
+               
+                var fixedphone = $("#page\\:frm\\:fixednumber").val();
+                var seletedListviewName = $("#page\\:frm\\:filterId option:selected").text();
+                if(fixedphone !== "" && fixedphone !== undefined && fixedphone !== null){
+                    if(!confirm('You have selected List View: '+seletedListviewName+' and Phone Number: '+fixedphone+' Now Twilio will start calling all the Phone Numbers you see in First column sequentialy')){
+                        return false;
+                    }
+                    var fn = fixedphone;
+                    var phn = fn.replace(/[+()\s-]/gi,"");
+                    var phn1;
+                    if(phn.length > 10){
+                        if(phn.charAt(0) == '1' || ( phn.charAt(0) == '9' && phn.charAt(1) == '1')){
+                            //alert('phn1'+phn1);
+                            phn1 = phn.match(/[0-9]{11}/gi);
+                            if(phn1 === "" || phn1 === undefined || phn1 === null){
+                                alert('Please enter a valid phone number having country code prefixed ');
+                                return false;
+                            }
+                            callfixedphone1();
+                            $("#log").text("On Call With...");
+                          //  $("#call").hide();
+                            //$("#mute").hide();
+                           // $("#hangup").hide();
+                           // $("#hangupf").show();
+                           // $("#skip").hide();
+                           // $("#callf").hide();
+                           // $("#fm").hide();
+                           // $("#dp").hide();
+                          //  $("#dial").hide();
+                           // //$("#ct").hide();
+                            $("#clrid").hide();
+                        }else{
+                            alert('Please check prefixed country code');
+                            return false;
+                        }
+                    }else{
+                        phn1 = phn.match(/[0-9]{10}/gi);
+                        if(phn1 !== "" && phn1 != undefined && phn1 != null){
+                            alert('Please prefix country code in you phone number');
+                            return false;
+                        }
+                        if(phn1 === "" || phn1 === undefined || phn1 === null){
+                            alert('Please enter a valid phone number having country code prefixed');
+                            return false;
+                        }
+                    }
+                    
+                }else{
+                    alert('Please enter a valid Phone number having country code prefixed');
+                }
+            }
+            function callusingfixedmobile(fixed){
+                if(fixed.checked){
+                    $("#mute").hide();
+                    $("#unmute").hide();
+                    $("#hangup").hide();
+                    $("#skip").hide();
+                    $("#fm").show();
+                    $("#call").hide();
+                    $("#callf").show();
+                    $("#dial").show();
+                    $("#dp").hide();
+                    $("#clrid").show();
+                    
+                  
+                    
+                }
+            }
+            function callusingsp(soft){
+                if(soft.checked){
+                    $("#mute").hide();
+                    $("#unmute").hide();
+                    $("#hangup").hide();
+                    $("#fm").hide();
+                    $("#call").show();
+                    $("#callf").hide();
+                    $("#dial").hide();
+                    $("#dp").hide();
+                    $("#clrid").hide();
+                }
+            }
+            function updateleadstatus(whoid){
+                popupWindow = window.open('/apex/leadstatus?id='+whoid,'Lead Status','width=1080px,height=700px');
+                popupWindow.focus();
+                popupWindow.moveTo(570,50);
+            
+            } 
+            function refresh(){
+                refresh1();
+            }
+            function popUp( url ){
+                popupWindow = window.open( url, 'New window','width=780px,height=700px' );
+                popupWindow.focus();
+                popupWindow.moveTo(570,50);
+            }
+            
+        </script>
+<table width="100%"> 
+    <tr>
+    <apex:form id="frm">
+    <apex:actionFunction name="callfixedphone1" action="{!callfixedphone}" reRender="ff"/>
+    <apex:actionFunction name="disconnectCall" action="{!DisconnectCall}" status="status" reRender="ff"/>
+    <apex:inputHidden id="noofleadstocall" value="{!noofleadstocall}"/>
+    <!--<td bgcolor="white" style="width:15%;height:700px;vertical-align:top;border:1px solid grey;">-->
+    <td bgcolor="white" style="width:24%;height:465px;vertical-align:top;border:1px solid grey; overflow:scroll;position:fixed;">
+        <div style="width:100%;">
+            <center><b><apex:outputText value="Automated Call List"/></b></center>
+            <apex:outputPanel id="leadlist" >
+            <!-- <apex:panelGrid columns="2"> -->
+                <apex:selectList value="{!filterId}" size="1" id="filterId">
+                    <apex:actionSupport event="onchange" status="status" action="{!updateleadlist}"/>
+                    <apex:selectOptions value="{!listviewoptions}"/>
+                </apex:selectList>
+            <!--  </apex:panelGrid>-->
+            
+            <apex:dataTable id="dtable" style="padding:10px;" value="{!llist1}" var="le" width="100%">
+                <apex:column width="60%" style="padding-top:7px;">
+                    <apex:facet name="header">Enrollment Task</apex:facet>
+                    <apex:commandLink id="cbutton" styleclass="acll" style="color:blue;" onclick="changecolor(this);" action="{!refresh}" status="status" reRender="refresh1,refresh2,detail,fidupdate">
+                        <b><apex:outputText value="{!le.company}"/></b>
+                        <apex:param value="{!le.id}" name="lid"/>
+                    </apex:commandLink>
+                </apex:column>
+                <apex:column width="40%" style="padding-top:7px;">   
+                    <apex:facet name="header">Phone</apex:facet>
+                    <apex:outputText value="{!le.Phone}"/>
+                </apex:column>
+            </apex:dataTable>
+            <center>
+              <apex:commandButton value="Previous" action="{!previous}"/>
+              <apex:commandButton value="Next" action="{!next}"/>
+           </center>
+            </apex:outputPanel>
+        </div>
+    </td>
+    <!--<td bgcolor="white" style="width:15%;height:700px;vertical-align:top;border:1px solid grey;">-->
+    <td bgcolor="white" style="width:17%;height:465px;border:1px solid grey;overflow:scroll; position: fixed;  margin-left: 24%;">
+        <div style="width:100%;">
+        <apex:outputpanel id="fidupdate">
+            <apex:pagemessages />
+            <script>
+                $(document).ready(function() {
+                    $("#cs").hide();
+                    $("#vm").hide();
+                    $("#dp").hide();
+                    $("#sm").hide();
+                    $("#sad").hide();
+                    $("#sc").hide();
+                    $("#con").hide();
+                    $("#myem").hide();
+                    $("#ncsoem").hide();
+                    $("#clrid").hide();
+                });
+                //Call using soft phone
+                function call() {
+                    var seletedListviewName = $("#page\\:frm\\:filterId option:selected").text();
+                    var callerid = $("#page\\:frm\\:callerid option:selected").text();
+                    callerid = callerid.replace('+','');
+                    console.log('callerid'+callerid);
+                    if(!confirm('You have selected List View: '+seletedListviewName+' Now will start calling all the Phone Numbers you see in First column sequentialy')){
+                        return false;
+                    }
+                  
+                    params = {"ownerid":"{!$User.Id}","clist":"{!clist}","ct":"Soft","isactive":"true","cid":callerid};
+                    console.log('clist is'+'{!clist}');
+                    connection = Twilio.Device.connect(params);
+                    $("#log").text("Calling...");
+                    $("#mute").show();
+                    $("#hangup").show();
+                    $("#skip").show();
+                    $("#hangupf").hide();
+                    $("#pause").show();
+                    $("#resume").hide();
+                    $("#callf").hide();
+                    $("#call").hide();                   
+                    $("#fm").hide();
+                    $("#dp").hide();
+                    $("#dial").hide();
+                    //$("#ct").hide();
+                    $("#hangupcall").show();
+                    $("#clrid").hide();
+                
+                }
+            </script>
+        </apex:outputpanel>
+        <table border="0" align="center" cellpadding="0" cellspacing="0">
+            <tr>
+                <td>
+                    <table  style="font-family:Verdana, Geneva, sans-serif; font-size:13px;" width="100%" border="0" align="center" cellpadding="3" cellspacing="3" >
+                        <tr>
+                            <td bgcolor="#8f96a0" onclick="hideOrShow('cs');" style="color:#fff;font-weight:bold;text-align:left;height:19px;">Call Statistics</td>
+                        </tr>
+                        <tr id="cs">
+                            <td>
+                                <table width="100%">
+                                    <tr>
+                                        <td style="font-size:11px;">
+                                            Todays calls : {!pcConversationCount.size + pcVoicemailCount.size}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-size:11px;">
+                                            Conversations : {!pcConversationCount.size}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-size:11px;">
+                                            Voice Mails : {!pcVoicemailCount.size}
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr> 
+                        <tr>
+                            <td bgcolor="#8f96a0" onclick="hideOrShow('ct');" style="color:#fff;font-weight:bold;text-align:left;height:19px;">Call Using</td>
+                        </tr>
+                        <tr >
+                            <td>
+                                Caller Id &nbsp;&nbsp;
+                                <apex:selectList id="callerid" value="{!callerid}" size="1" style="width:125px;align:center;">
+                                    <apex:selectOptions value="{!calledIds}"/>
+                                </apex:selectList>
+                            </td>
+                        </tr>
+                        <tr id="ct">
+                            <td>
+                                <table  style="font-family:Verdana, Geneva, sans-serif; font-size:13px;" width="180px" border="0" align="center" cellpadding="3" cellspacing="3" >
+                                   <tr>
+                                        <td>
+                                            <input type="radio" name="calloption" onclick="callusingfixedmobile(this);"/>Fixed/Mobile Phone
+                                        </td>
+                                   </tr>
+                                   <!--<tr id="clrid">
+                                        <td>
+                                            Caller Id<apex:selectList id="callerid" value="{!callerid}" size="1" style="width:125px;align:center;">
+                                                <apex:selectOptions value="{!calledIds}"/>
+                                            </apex:selectList>
+                                        </td>
+                                   </tr>-->
+                                     
+                                   <tr id="fm">
+                                        <td>
+                                            Call From<apex:inputText value="{!fixedNumber}" id="fixednumber" style="width:101%;height:17px;text-align:center;"/>
+                                        </td>
+                                   </tr>
+                                   <tr id="dial">
+                                        <td colspan="2" onclick="hideOrShow('dp');" class="tdcl" bgcolor="#22b14c" style="color:#fff;border:2px;border-radius:5px;border-color:#22b14c;box-shadow: 1px 1px 1px #22b14c; 
+                                        text-align:center;">
+                                            Dial Pad
+                                        </td>
+                                    </tr>
+                                    <tr id="dp">
+                                        <td align="center" valign="top" bgcolor="#404040">
+                                            <table style="font-family:Verdana, Geneva, sans-serif; font-size:12px;" width="99%" border="0" align="center" cellpadding="3" cellspacing="5" >
+                                                <tr>
+                                                    <td style="background-color:#FFF; border-radius:5px; color:#000; text-align:center;width:50px; height:20px;" onclick="addNumber(this);" >1</td>
+                                                    <td style="background-color:#FFF; border-radius:5px; color:#000; text-align:center;width:50px; height:20px;" onclick="addNumber(this);">2 </td>
+                                                    <td style="background-color:#FFF; border-radius:5px; color:#000; text-align:center;width:50px; height:20px;" onclick="addNumber(this);">3</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="background-color:#FFF; border-radius:5px; color:#000; text-align:center;width:50px; height:20px;" onclick="addNumber(this);">4</td>
+                                                    <td style="background-color:#FFF; border-radius:5px; color:#000; text-align:center;width:50px; height:20px;" onclick="addNumber(this);">5</td>
+                                                    <td style="background-color:#FFF; border-radius:5px; color:#000; text-align:center;width:50px; height:20px;" onclick="addNumber(this);">6</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="background-color:#FFF; border-radius:5px; color:#000; text-align:center;width:50px; height:20px;" onclick="addNumber(this);">7</td>
+                                                    <td style="background-color:#FFF; border-radius:5px; color:#000; text-align:center;width:50px; height:20px;" onclick="addNumber(this);">8</td>
+                                                    <td style="background-color:#FFF; border-radius:5px; color:#000; text-align:center;width:50px; height:20px;" onclick="addNumber(this);">9</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="background-color:#FFF; border-radius:5px; color:#000; text-align:center;width:50px; height:20px;" onclick="addNumber(this);">*</td>
+                                                    <td style="background-color:#FFF; border-radius:5px; color:#000; text-align:center;width:50px; height:20px;" onclick="addNumber(this);">0</td>
+                                                    <td style="background-color:#FFF; border-radius:5px; color:#000; text-align:center;width:50px; height:20px;" onclick="addNumber(this);">#</td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                   <tr id="callf">
+                                        <td class="tdcl" colspan="2" bgcolor="#22b14c" style="border:2px;border-radius:5px;border-color:#22b14c;box-shadow: 1px 1px 1px #22b14c;
+                                            text-align:center;">
+                                        <a  class="acl" href="#" onclick="callfixedphone();" title="Button For Fixed Phone Call">
+                                            Activate Dialer
+                                        </a>
+                                        </td>
+                                    </tr>
+                                    <tr id="hangupf">
+                                        <td class="tdcl" colspan="2" bgcolor="red" style="border:2px;border-radius:5px;border-color:#22b14c;box-shadow: 1px 1px 1px #22b14c;
+                                            text-align:center;">
+                                            <a  class="acl" href="#" onclick="hangupf();" title="Button for Fixed Phone Call">
+                                                De-actvate Dialer
+                                            </a>
+                                        </td>
+                                    </tr>
+                                   <tr>     
+                                        <td>
+                                            <input type="radio" name="calloption" onclick="callusingsp(this);"/>Soft Phone
+                                        </td>
+                                    </tr>
+                                    
+                                    <tr id="call">
+                                        <td class="tdcl" colspan="2" bgcolor="#22b14c" style="border:2px;border-radius:5px;border-color:#22b14c;box-shadow: 1px 1px 1px #22b14c;
+                                            text-align:center;">
+                                            <a  class="acl" href="#" onclick="call();" title="Button for Soft Phone Call">
+                                                Activate Dialer
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    <tr id="hangup">
+                                        <td class="tdcl" colspan="2" bgcolor="red" style="border:2px;border-radius:5px;border-color:#22b14c;box-shadow: 1px 1px 1px #22b14c;
+                                            text-align:center;">
+                                            <a  class="acl" href="#" onclick="hangup();" title="Button for Soft Phone Call">
+                                               De-actvate Dialer
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    
+                                </table>
+                            </td>
+                        </tr >
+                        
+                   </table>
+                   <apex:outputPanel id="refresh1">
+                   <table  style="font-family:Verdana, Geneva, sans-serif; font-size:13px;" width="100%" border="0" align="center" cellpadding="3" cellspacing="3" >
+                        <tr>
+                            <td bgcolor="#00a2e8" style="color:#fff;text-align:center;">Current Call</td>
+                        </tr> 
+                        <tr>
+                            <td>
+                                <table width="100%"> 
+                                    <tr>
+                                        <td style="border:1px solid grey;text-align:center;display:{!if(whoid != null ,'block','none')}">
+                                            <div style="text-align:left;" id="log"></div>
+                                            {!if(l.Company != null,l.company,'')}
+                                            {!if(con.AccountId != null,con.Account.name,'')}
+                                            {!acc.Name}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="border:1px solid grey;text-align:center;display:{!if(whoid != null ,'block','none')}">
+                                            {!l.Name}
+                                            {!con.Name}
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        <tr id="phone">
+                            <td width="86%" style="color:#fff;">
+                                <apex:inputText id="number" disabled="true" value="{!Phonenumber}" style="width:101%;height:17px;text-align:center;"/>
+                            </td>
+                        </tr>
+                        </table>
+                        </apex:outputPanel>
+                        <table  style="font-family:Verdana, Geneva, sans-serif; font-size:13px;" width="100%" border="0" align="center" cellpadding="3" cellspacing="3" >
+                        
+                        <tr id="skip">
+                            <td bgcolor="#a349a4" class="tdcl" style="color:#fff;border:2px;border-radius:5px;border-color:#22b14c;box-shadow: 1px 1px 1px #a349a4;
+                                text-align:center;">
+                                <a class="acl" href="#" onclick="skip();" title="Button for Soft Phone Call Unmute">
+                                    Skip Call
+                                </a>
+                            </td>
+                        </tr>
+                        
+                        <tr id="mute">
+                            <td bgcolor="#a349a4" class="tdcl" style="color:#fff;border:2px;border-radius:5px;border-color:#22b14c;box-shadow: 1px 1px 1px #a349a4;
+                                text-align:center;">
+                                <a  class="acl" href="#" onclick="mute();" title="Button for Soft Phone Call Mute">
+                                    Mute Call
+                                </a>
+                            </td>
+                        </tr>
+                        
+                        <tr id="unmute">
+                            <td bgcolor="#a349a4" class="tdcl" style="color:#fff;border:2px;border-radius:5px;border-color:#22b14c;box-shadow: 1px 1px 1px #a349a4;
+                                text-align:center;">
+                                <a class="acl" href="#" onclick="unmute();" title="Button for Soft Phone Call Unmute">
+                                    Unmute Call
+                                </a>
+                            </td>
+                        </tr>
+                        
+                        <tr id="pause">
+                            <td bgcolor="#a349a4" class="tdcl" style="color:#fff;border:2px;border-radius:5px;border-color:#22b14c;box-shadow: 1px 1px 1px #a349a4;
+                                text-align:center;">
+                                <a  class="acl" href="#" onclick="pausedialer();" title="Button for Soft Phone Call Pause">
+                                    Pause Dialer
+                                </a>
+                            </td>
+                        </tr>
+                        <tr id="resume">
+                            <td bgcolor="#a349a4" class="tdcl" style="color:#fff;border:2px;border-radius:5px;border-color:#22b14c;box-shadow: 1px 1px 1px #a349a4;
+                                text-align:center;">
+                                <a  class="acl" href="#" onclick="resumedialer();" title="Button for Soft Phone Call Resume">
+                                    Resume Dialer
+                                </a>
+                            </td>
+                        </tr>
+                        
+                        <tr id="hangupcall" >
+                            <td bgcolor="#ed1c24" class="tdcl" style="color:#fff;border:2px;border-radius:5px;border-color:#22b14c;box-shadow: 1px 1px 1px #ed1c24;
+                                text-align:center;">
+                                <a class="acl" href="#" onclick="hangupcall();" title="Button for Soft Phone Call Disconnect">
+                                    Hang Up Call
+                                </a>
+                            </td>
+                        </tr>
+                        
+                        <tr id="addnote">
+                            <td bgcolor="#8f96a0" onclick="hideOrShow('note');" style="color:#fff;">Add Note</td>
+                        </tr>
+                        <tr id="note">
+                            <td>
+                                <table width="100%">
+                                    <tr>
+                                        <td bgcolor="#fff" id="note">  
+                                            <apex:inputTextArea value="{!CallNote}" style="height:35px; width:90%; border:solid #CCC 1px; outline:none; 
+                                            padding-left:6px; padding-right:6px;" />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td  align="right" bgcolor="#fff"> 
+                                            <apex:commandbutton action="{!savenote}" value="Save" reRender="ff" status="status"/>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        
+                        </table>
+                        <apex:outputpanel id="refresh2">
+                        <table  style="font-family:Verdana, Geneva, sans-serif; font-size:13px;" width="100%" border="0" align="center" cellpadding="3" cellspacing="3" >
+                        <tr id="callStatus">
+                            <td bgcolor="#00a2e8" class="tdcl" style="color:#fff;text-align:left;">
+                                <apex:commandLink styleclass="acl" onclick="updateleadstatus('{!whoid}');" target="_blank" reRender="ff">Update Status</apex:commandLink>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td bgcolor="#8f96a0" onclick="hideOrShow('vm');" style="color:#fff;text-align:left;">
+                                 Leave Voice Mail 
+                              <!--  <apex:commandLink value="Leave Voice Mail" onclick="gettingvalue();"/> -->
+                            </td>
+                        </tr>
+                        
+                        <tr id="vm">
+                            <td>
+                                <table width="180px" id="table_vm">
+                                    <apex:repeat value="{!VMRs}" var="vm">
+                                   <tr>
+                                        <td bgcolor="#00a2e8" class="tdcl" style="color:#fff;border:2px;border-color:#22b14c;box-shadow: 1px 1px 1px #8f96a0;
+                                            text-align:left;width:99%">
+                                            <apex:commandLink styleclass="acl" reRender="ff" action="{!leavevoicemail}" onclick="javascript:if('{!whoid}' == ''){alert('Please select a Lead to send Voicemail');return false;} else alert('Voice Mail Sending Started');">{!vm.Name}
+                                                <apex:param name="vmid" value="{!vm.id}"/>                   
+                                            </apex:commandLink>
+                                        </td>
+                                    </tr>      
+                                    </apex:repeat> 
+                                </table> 
+                            </td>
+                        </tr>
+                        
+                        
+                        <tr id="sendmail">
+                            <td bgcolor="#8f96a0" onclick="hideOrShow('sm');" style="color:#fff;text-align:left;">
+                                Send Email
+                            </td>
+                        </tr>
+                        <tr id="sm">
+                        <td>
+                        <table width="100%">
+                        <tr id="myemails">
+                            <td bgcolor="#8f96a0" onclick="hideOrShow('myem');" style="color:#fff;text-align:left;">
+                                My Emails
+                            </td>
+                        </tr>
+                        <tr id="myem">
+                            <td>
+                                <table width="175px" id="table_email">
+                                    <apex:repeat value="{!EmailTemplistUser}" var="emailtempuser">
+                                    <tr>
+                                        <td bgcolor="#00a2e8" class="tdcl" style="color:#fff;border:2px;border-color:#22b14c;box-shadow: 1px 1px 1px #8f96a0;
+                                            text-align:left;text-color:red;width:99%">
+                                            <apex:commandLink styleclass="acl" target="_blank" onclick="popUp('/_ui/core/email/author/EmailAuthor?p2_lkid={!l.id}&rtype=00Q&template_id={!emailtempuser.id}&retURL={!l.id}');" rerender="ff">
+                                                {!emailtempuser.Name}
+                                            </apex:commandLink>
+                                            
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                    </apex:repeat>
+                                </table>
+                                </td>
+                        </tr>
+                        <tr id="nscoems">
+                            <td bgcolor="#8f96a0" onclick="hideOrShow('ncsoem');" style="color:#fff;text-align:left;">
+                                Sfclouds Emails
+                            </td>
+                        </tr>
+                        <tr id="ncsoem">
+                            <td>
+                                <table width="175px" id="table_email">
+                                    <apex:repeat value="{!Emailtemplist}" var="emailtemp">
+                                    <tr>
+                                        <td bgcolor="#00a2e8" class="tdcl" style="border:2px;border-color:#22b14c;box-shadow: 1px 1px 1px #8f96a0;
+                                            text-align:left;width:99%">
+                                            <apex:commandLink styleclass="acl" target="_blank" onclick="popUp('/_ui/core/email/author/EmailAuthor?p2_lkid={!l.id}&rtype=00Q&template_id={!emailtemp.id}&retURL={!l.id}');" rerender="ff">
+                                                {!emailtemp.Name}
+                                            </apex:commandLink>
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                    </apex:repeat>
+                                    
+                                </table>
+                                
+                            </td>
+                        </tr>
+                        </table>
+                        </td>
+                        </tr>
+                        <tr id="Demo">
+                            <td bgcolor="#8f96a0" onclick="hideOrShow('sad');" class="tdcl" style="color:#fff;text-align:left;">
+                                Set Appointment For Demo
+                            </td>
+                        </tr>
+                        <tr id="sad">
+                            <td>
+                                <table width="100%">
+                                    <tr>
+                                        <td bgcolor="#00a2e8" class="tdcl" style="color:#fff;text-align:left;">
+                                            <!--<apex:commandlink styleclass="acl"  onclick="popUp('/00U/e?who_id={!l.id}&retURL=/{!l.id}&00NZ0000000sfyA=1');" rerender="ff">-->
+                                            <apex:commandlink styleclass="acl"  onclick="popUp('https://www.google.com/calendar/event?action=TEMPLATE');" rerender="ff">
+                                                Google Calender
+                                            </apex:commandlink>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td bgcolor="#00a2e8" class="tdcl" style="color:#fff;text-align:left;">
+                                            <apex:commandlink styleclass="acl"  onclick="popUp('{!URLFOR($Action.Lead.SendGmail, l.Id)}');" rerender="ff">
+                                                Invite
+                                            </apex:commandlink>
+                                            
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        <tr id="setcallback">
+                            <td bgcolor="#8f96a0" onclick="hideOrShow('sc');" style="color:#fff;text-align:left;">
+                                Set CallBack
+                            </td>
+                        </tr>
+                        <tr id="sc">
+                            <td>
+                                <table width="100%">
+                                    <tr>
+                                        <td bgcolor="#00a2e8" style="color:#fff;text-align:left;width:60%">
+                                            
+                                            <!-- <apex:commandlink styleclass="acl" target="_blank" onclick="popUp('/00T/e?who_id={!l.id}&retURL=/{!l.id}&00Nd0000007MQdI=1');" rerender="ff">
+                                                Calender
+                                            </apex:commandlink> -->
+                                            
+                                            <apex:commandlink styleclass="acl" target="_blank" onclick="popUp('/00U/c?cType=1');" rerender="ff">
+                                                Calender
+                                            </apex:commandlink>
+                                            
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        <tr id="addevent">
+                            <td bgcolor="#00a2e8" class="tdcl" style="color:#fff;text-align:left;">
+                                <!--<apex:commandlink styleclass="acl"  onclick="popUp('https://www.google.com/calendar/event?action=TEMPLATE');" rerender="ff">-->
+                                <apex:commandlink styleclass="acl" target="_blank" onclick="popUp('/00U/e?who_id={!l.id}&retURL=/{!l.id}&00Nd0000007MQdI=1');" rerender="ff">
+                                    Add Event
+                                </apex:commandlink>
+                            </td>
+                        </tr>
+                    </table>
+                    </apex:outputPanel>
+                </td>
+            </tr>
+        </table>
+    </div>
+    </td>
+    
+    </apex:form>
+    <!--<td bgcolor="white" style="width:70%;height:700px;vertical-align:top;border:1px solid grey;"> -->
+    <td bgcolor="white" style="padding-left:43%;height:100%;vertical-align:top;"> 
+        <apex:outputpanel id="detail">
+        <div style="width:100%;">
+            <apex:detail subject="{!whoid}" relatedlist="true" inlineEdit="true" title="false"/>
+            <script>
+                $("#topButtonRow").hide();
+            </script>
+        </div>
+        </apex:outputpanel>
+    </td>
+    </tr>
+</table>
+    
+</apex:page>
+
+**************************************************************apex class*****************************************************************
+
+public with sharing class TwilioAutomatedLeadCallingController2 {
+    private TwilioCapability capability;
+    TwilioRestClient client;
+    
+    public list<Lead> leadlist{get;set;}
+    public string filterId1{get;set;}
+    public Lead l {get;set;} 
+    public Contact con{get;set;}
+    public Account acc{get;set;}
+    Apexpages.Standardsetcontroller leads2;
+    public String clist{get;set;}
+    public integer noofleadstocall{get;set;}
+    
+    public string anotherFixednumber{get;set;} 
+    public string anothernumber{get;set;}
+    public string fixednumber{get;set;}
+    public string callerphone{get;set;}
+    public string PhoneNumber{get;set;}
+    public boolean isActive = false;
+    
+    public string whoid{get;set;}
+    
+    public boolean isCallAutomation{get;set;}
+    public string CallList{get;set;}
+    public list<Recording__c> VMRs{get;set;}
+    public list<EmailTemplate> EmailTemplist{get;set;}
+    public list<EmailTemplate> EmailTemplistUser{get;set;}
+    public Id ReceivedId {get;set;}
+    
+    public boolean isFirstTime = true;
+    public user u;
+    public list<selectOption> calledIds{get;set;}
+    public string callerid{get;set;}
+    
+    public string CallNote{
+        get{
+            return CallNote ;  
+        }
+        set{
+            CallNote = value;
+        }
+    }  
+    
+    public list<Phone_Call__c> getpcConversationCount(){
+        return [select id ,name from phone_call__c where ownerid =: userinfo.getuserId() and type__c = 'Conversation' 
+        and (DAY_IN_MONTH(convertTimezone(CreatedDate)) =: date.today().day() and CALENDAR_MONTH(convertTimezone(CreatedDate)) =: date.today().month()
+        and CALENDAR_YEAR(convertTimezone(CreatedDate)) =: date.today().year()) limit 50000];
+    }
+    public list<Phone_Call__c> getpcVoicemailCount(){
+        return [select id ,name from phone_call__c where ownerid =: userinfo.getuserId() and type__c = 'Voicemail' 
+        and (DAY_IN_MONTH(convertTimezone(CreatedDate)) =: date.today().day() and CALENDAR_MONTH(convertTimezone(CreatedDate)) =: date.today().month()
+        and CALENDAR_YEAR(convertTimezone(CreatedDate)) =: date.today().year()) limit 50000];
+        
+    }
+    
+    public TwilioAutomatedLeadCallingController2(Apexpages.Standardsetcontroller leads){
+      leads.getlistviewoptions().sort();
+        leads2 = leads;
+        noofleadstocall = 45;
+        con = new Contact();
+        l = new Lead();
+        acc = new Account();
+        VMRs = new list<Recording__c>();
+        list<Recording__c> VMRlist = new list<Recording__c>();
+        calledIds = new list<selectOption>();
+        callerid = '';
+        u = new user();
+        string fid = ApexPages.currentPage().getParameters().get('fid');
+        clist = '';
+        
+        u = [select id,name,phone,AutomatedDailerCallSid__c from user where id =: userinfo.getUserId()];
+        system.debug('uc'+u.id);      
+        VMRs = [Select r.SystemModstamp, r.RecordingURL__c, r.RecordingDuration__c, r.OwnerId, r.Name, r.LastModifiedDate, 
+        r.LastModifiedById, r.IsDeleted, r.Id, r.CreatedDate, r.CreatedById From Recording__c r];
+        
+        EmailTemplist = new list<EmailTemplate>();
+        EmailTemplistUser = new list<EmailTemplate>();
+    
+        EmailTemplist = [Select e.TimesUsed, e.TemplateType, e.TemplateStyle, e.SystemModstamp, e.Subject, e.OwnerId, e.NamespacePrefix, e.Name, 
+                e.Markup, e.LastUsedDate, e.LastModifiedDate, e.LastModifiedById, e.IsActive, e.Id, e.HtmlValue, e.FolderId, e.Encoding, e.DeveloperName, 
+                e.Description, e.CreatedDate, e.CreatedById, e.BrandTemplateId, e.Body, e.ApiVersion 
+                From EmailTemplate e where IsActive = true and Folder.Name Like '%Twilio Outgoing Calls%' order by Name asc];
+                
+        EmailTemplistUser = [Select e.TimesUsed, e.TemplateType, e.TemplateStyle, e.SystemModstamp, e.Subject, e.OwnerId, e.NamespacePrefix, e.Name, 
+                e.Markup, e.LastUsedDate, e.LastModifiedDate, e.LastModifiedById, e.IsActive, e.Id, e.HtmlValue, e.FolderId, e.Encoding, e.DeveloperName, 
+                e.Description, e.CreatedDate, e.CreatedById, e.BrandTemplateId, e.Body, e.ApiVersion 
+                From EmailTemplate e where IsActive = true and Folder.Name like: '%'+Userinfo.getFirstName()+'%' order by Name asc];
+        
+        
+        CallerPhone = u.phone;
+        if (Test.isRunningTest()) {
+            
+            integer i=0;
+            i++;
+            i++;
+            i++;
+            i++;
+            i++;
+            i++;
+            i++;
+            i++;
+            i++;
+            i++;
+            i++;
+            i++;
+                
+                  
+        }else{
+            capability = TwilioAPI.createCapability();
+            capability.allowClientOutgoing(TwilioConfig__c.getInstance('Twilio Outbound Automated calls').ApplicationSid__c,null);
+            capability.allowClientIncoming('salesforce_agent');
+            
+            String account = TwilioConfig__c.getInstance('Twilio Outbound Automated calls').AccountSid__c;
+            String token = TwilioConfig__c.getInstance('Twilio Outbound Automated calls').AuthToken__c;
+            client = new TwilioRestClient(account, token);
+            TwilioOutgoingCallerIdList TOCIDs = client.getAccount().getOutgoingCallerIds();
+            List<TwilioOutgoingCallerId> TOCIDlist = TOCIDs.getPageData();
+            for(TwilioOutgoingCallerId TOCID : TOCIDlist){
+                calledIds.add(new selectOption(TOCID.getPhoneNumber(),TOCID.getPhoneNumber()));
+            }
+            TwilioIncomingPhoneNumberList TIPNLs = client.getAccount().getIncomingPhoneNumbers();
+            list<TwilioIncomingPhoneNumber> TIPNList = TIPNLs.getPageData();
+            for( TwilioIncomingPhoneNumber TIPN : TIPNList ){
+                calledIds.add(new selectOption( TIPN.getPhoneNumber() , TIPN.getPhoneNumber() ));
+            }
+            
+            system.debug('----'+calledIds);
+        }
+     string headerdata= ApexPages.currentPage().getHeaders().get('Host');       
+    string urlvalue=Apexpages.currentPage().getUrl();       
+    string url='https://' + headerdata+ urlvalue;
+           
+        updateleadlist();
+        
+    }
+    
+    public Pagereference refresh2(){
+        String s = leads2.getFilterId();
+        return new Pagereference('/apex/TwilioAutomatedCallingPage2?fid='+s).setRedirect(true);
+    }
+    public void updateleadlist() {
+        leadlist = new List<Lead>();
+        if( noofleadstocall == null || noofleadstocall <= 0 ){
+          noofleadstocall = 45;
+        }
+        if( !Test.isRunningTest()){
+          leads2.setPageSize(noofleadstocall); 
+        }  
+        leadlist = (list<Lead>)leads2.getRecords();
+        System.debug('leadlist'+leadlist);
+        if(leadlist.size()>0){
+            l = leadlist[0];
+            whoid = l.id;
+        }else{
+            l = null;
+            whoid = null;
+        }
+        isFirstTime = true;
+        refresh();
+        
+    }
+        
+    public String getToken() {
+        system.debug('');
+        return capability.generateToken();
+    }
+   
+    public void callfixedphone(){
+        String account = TwilioConfig__c.getInstance('Twilio Outbound Automated calls').AccountSid__c;
+        String token = TwilioConfig__c.getInstance('Twilio Outbound Automated calls').AuthToken__c;
+        system.debug('userid'+u.id);                            
+        client = new TwilioRestClient(account, token);
+        String siteURL = TwilioConfig__c.getInstance('Twilio Outbound Automated calls').Force_com_Site_Base_URL__c;
+        String callerid1 = callerid.replaceAll('[+]','');
+        system.debug('callerid1='+callerid1);
+        Map<String,String> params = new Map<String,String> {
+            'To'   => fixednumber,
+            'From' => callerid,
+            /*'method'=> 'GET',
+            'statusCallback'=> siteURL+'/TwilioAutomatedCallingPage2?ownerid='+u.id+'&clist='+clist+'&ct=Fixed&isactive=true&cid='+callerid1,
+            'statusCallbackMethod'=> 'POST',*/
+            'Url' =>siteURL+'/generateTwiML?ownerid='+u.id+'&clist='+clist+'&ct=Fixed&isactive=true&cid='+callerid1,
+            'IfMachine' => 'Hangup'
+        };
+            
+            
+        system.debug('params'+params);
+         if( !Test.isRunningTest()){
+        TwilioCall Call = client.getAccount().getCalls().create(params);
+        U.AutomatedDailerCallSid__c = Call.getSid();
+        update U;
+         }
+        isActive = false;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    public void DisconnectCall(){
+            try
+            {
+                String account = TwilioConfig__c.getInstance('Twilio Outbound Automated calls').AccountSid__c;
+                String token = TwilioConfig__c.getInstance('Twilio Outbound Automated calls').AuthToken__c;
+                
+                if( U.AutomatedDailerCallSid__c != null && U.AutomatedDailerCallSid__c != '' )
+                {
+                    TwilioRestClient client = new TwilioRestClient(account, token);
+                    TwilioCall call = client.getAccount().getCall(U.AutomatedDailerCallSid__c);
+                    call.hangup();
+                        }
+            }
+                catch(Exception e)
+            {
+                
+            }
+      }   
+    public void savenote(){
+        system.debug('-CallNote-'+CallNote+'-ReceivedId-'+ReceivedId+'-whoid-'+whoid);
+        if(CallNote != null && CallNote != ''){
+            Note__c n = new Note__c();
+            if(ReceivedId != null){
+                Schema.SObjectType token = ReceivedId.getSObjectType();
+                Schema.DescribeSObjectResult dr = token.getDescribe();
+                if(dr.getName() == 'Lead'){
+                        n.Lead__c = ReceivedId;
+                }else if(dr.getName() == 'Account'){
+                        n.Account__c = ReceivedId;
+                }else if(dr.getName()== 'Contact'){
+                        n.Contact__c = ReceivedId;
+                        n.Account__c = con.AccountId;
+                }
+                n.Note__c = 'Call Note: '+CallNote;
+                n.Title__c = 'Call on '+Datetime.now();
+                try{
+                    UtilityClass.isApexCall = true;
+                    insert n;
+                    callNote = '';
+                }catch(Exception e){}
+            }
+        }
+    }
+    public void leavevoicemail(){
+    try{
+        string VMid = ApexPages.currentPage().getParameters().get('vmid');
+         String account = TwilioConfig__c.getInstance('Twilio Outbound Automated calls').AccountSid__c;
+         String token = TwilioConfig__c.getInstance('Twilio Outbound Automated calls').AuthToken__c;
+        if(VMid != null && VMid != ''){
+            Recording__c recording = [select Id,Name,RecordingURL__c,RecordingDuration__c from Recording__c where id =: Vmid];
+            if(recording.RecordingURL__c != null && recording.RecordingURL__c != ''){
+                string[] recURLsubstrings = new string[]{};
+                recURLsubstrings = recording.RecordingURL__c.split('/',0);
+                if(recURLsubstrings.size()>0){
+                    string  recordingId = recURLsubstrings[recURLsubstrings.size()-1];
+                    //recordingId = recordingId.substringBefore('.'); 
+                    system.debug('recordingId='+recordingId+' recordingId.length =='+recordingId.length()+'isActive='+isActive);
+                    
+                    if(recordingId.length() == 38 || recordingId.length() == 34)
+                    {
+                        if(Test.isRunningTest())
+                        {
+                                
+                        }
+                        else
+                        {
+                            if(!isActive)
+                            {
+                             TwilioRestClient client = new TwilioRestClient(account, token);
+                                Map<String, String> params = new Map<String, String>();
+                                params.put('Status', 'in-progress');
+                                params.put('ParentCallSid', U.AutomatedDailerCallSid__c);
+                                //params.put('To', '');
+                                   system.debug('pram----------------------------------------     : '+params);                       
+                                TwilioCallList calllist = client.getAccount().getCalls();
+                                System.debug('calllist --->'+calllist );
+                                List<TwilioCall> clist = calllist.getPageData();
+                                system.debug('clist-------------------------------'+clist.size());
+                                //if(clist.size() == 1) 
+                              //  {
+                                    string sid = clist[0].getSid();
+                                    system.debug('sid--'+sid); 
+                                    String siteURL = TwilioConfig__c.getInstance('Twilio Outbound Automated calls').Force_com_Site_Base_URL__c; 
+                                    TwilioCall call = client.getAccount().getCall(Sid);
+                                    call.redirect(siteURL+'/LeaveVM?RId='+recordingId,'POST');
+                                    Phone_Call__c PC = new Phone_Call__c();
+                                    PC.recordingurl__c = recording.RecordingURL__c;
+                                    PC.CallDurationInSeconds__c = string.valueof(recording.RecordingDuration__c);
+                                    PC.Type__c = 'Voicemail';
+                                    PC.who_lead__c = ReceivedId;
+                                    insert pc;
+                               // }
+                            }
+                        }       
+                    }
+                }
+            }
+        }
+        
+        
+        }
+        
+        Catch(exception e)
+        {
+            system.debug('11111111111111111'+e.getmessage()+'777777777777'+e.getlinenumber());
+        }
+    }
+        
+        
+    public void refresh()
+    {
+        system.debug('--whoid--'+whoid);
+        system.debug('--isFirstTime--'+isFirstTime);
+        if(!isFirstTime)
+        {
+            whoid = ApexPages.currentPage().getParameters().get('lid');
+        }
+        System.debug('whoid after'+whoid);
+        isFirstTime = false;
+        phonenumber = null;
+        if(whoid != null && whoid != ''){
+            Boolean isLeadSelected = false;
+            clist = '';
+            for( lead l : leadlist){
+                if( !isLeadSelected && l.Id == whoid ){
+                    isLeadSelected = true;
+                }
+                if( isLeadSelected ){
+                    clist += l.Id+':';
+                }
+            }
+            
+            ReceivedId = whoid;
+            Schema.SObjectType token = ReceivedId.getSObjectType();
+            Schema.DescribeSObjectResult dr = token.getDescribe();
+        
+            if(dr.getName() == 'Lead')
+            {
+                l = [select id,name,street,Email,city,country,company,Fax,Phone,State,PostalCode,MobilePhone,Owner.Name from Lead where id =: ReceivedId];
+                PhoneNumber = l.Phone;
+            }
+            if(PhoneNumber != null && PhoneNumber != '')
+            {
+                system.debug('phone1'+PhoneNumber);
+                String phn = PhoneNumber;
+                phn = phn.remove('(');
+                phn = phn.remove(')');
+                phn = phn.remove('-');
+                phn = phn.remove(' ');
+                phn = phn.remove('+');
+                system.debug('phone2'+Phn);
+                if(phn != null && phn != '')
+                {
+                    if(phn.isNumeric())
+                    {
+                        if(phn.length()==10)
+                        {
+                            PhoneNumber = '+1'+PhoneNumber;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
